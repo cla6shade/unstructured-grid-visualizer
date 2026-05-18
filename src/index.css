@@ -4,4 +4,24 @@
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system,
     BlinkMacSystemFont, system-ui, Roboto, 'Apple SD Gothic Neo', 'Noto Sans KR',
     'Malgun Gothic', sans-serif;
+
+  /* Brand */
+  --color-primary: #2b68d6;
+  --color-primary-muted: #cbdeff;
+
+  /* Surfaces (배경) */
+  --color-background: #2c2e34;
+  --color-background-hover: #3a3c42;
+  --color-surface: #2c2e34cc;
+  --color-surface-light: #e1e5ed;
+  --color-surface-light-muted: #c5c9ce;
+
+  /* Foreground (텍스트/콘텐츠) */
+  --color-foreground: #ffffff;
+  --color-foreground-muted: #e7eaef;
+  --color-foreground-active: #595b5f;
+
+  /* Shadows */
+  --shadow-sm: 0px 0px 6px rgba(88, 89, 95, 0.24);
+  --shadow-md: 0px 0px 12px rgba(88, 89, 95, 0.32);
 }
