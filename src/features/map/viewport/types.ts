@@ -5,13 +5,15 @@ export interface LatLng {
   lng: number;
 }
 
+export interface LatLngBound {
+  sw: LatLng;
+  ne: LatLng;
+}
+
 export interface ViewportState {
   center: LatLng;
   zoom: number;
-  bounds: {
-    sw: LatLng;
-    ne: LatLng;
-  };
+  bounds: LatLngBound;
 }
 
 export interface ViewportStore extends ViewportState {
