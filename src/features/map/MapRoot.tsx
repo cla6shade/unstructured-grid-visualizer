@@ -7,6 +7,10 @@ import { useBasemap } from '@/features/map/basemap/hooks/useBasemap';
 import { transformRequest } from '@/features/map/lib/transformRequest';
 import { ViewportProvider } from '@/features/map/viewport/components/ViewportProvider';
 import { useSyncView } from '@/features/map/viewport/hooks/useSyncView';
+import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayProvider';
+import { TimeProvider } from '@/features/map/time/components/TimeProvider';
+import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
+import { SshLayer } from '@/features/layers/contour/ssh/components/SshLayer';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,
@@ -19,9 +23,11 @@ import {
 export function MapRoot() {
   return (
     <ViewportProvider initialState={INITIAL_VIEWPORT}>
-      <BasemapProvider>
-        <MapView />
-      </BasemapProvider>
+      <TimeProvider>
+        <BasemapProvider>
+          <MapView />
+        </BasemapProvider>
+      </TimeProvider>
     </ViewportProvider>
   );
 }
@@ -49,7 +55,12 @@ function MapView() {
         onLoad={syncView}
         onMoveEnd={syncView}
         style={{ width: '100%', height: '100%' }}
-      />
+      >
+        <DeckOverlayProvider>
+          <CoastlineLayer />
+          <SshLayer />
+        </DeckOverlayProvider>
+      </Map>
       <BasemapSelector />
     </div>
   );
