@@ -11,6 +11,7 @@ import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayP
 import { TimeProvider } from '@/features/map/time/components/TimeProvider';
 import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
 import { SshLayer } from '@/features/layers/contour/ssh/components/SshLayer';
+import { CurrentLayer } from '@/features/layers/current/components/CurrentLayer';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,
@@ -59,6 +60,7 @@ function MapView() {
         <DeckOverlayProvider>
           <CoastlineLayer />
           <SshLayer />
+          <CurrentLayer />
         </DeckOverlayProvider>
       </Map>
       <BasemapSelector />
