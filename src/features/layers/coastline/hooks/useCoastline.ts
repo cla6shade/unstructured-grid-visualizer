@@ -27,7 +27,7 @@ export function useCoastline(): GeoJSON.FeatureCollection | null {
 
     let cancelled = false;
 
-    Promise.all(tiles.map((tile) => fetchCoastlineTile(tile))).then(
+    Promise.all(tiles.map((tile) => fetchCoastlineTile(tile))).then( // TODO: async/await
       (resolved) => {
         // viewport가 다시 바뀌어 effect가 정리됐으면 stale 결과 폐기
         if (cancelled) return;
