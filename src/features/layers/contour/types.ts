@@ -1,6 +1,7 @@
 import type { TileCoord } from '@/lib/tile';
+import type { Triangle } from '@/features/types';
 
-export type Triangle = [number, number, number];
+export type { Triangle };
 export type RGBA = [number, number, number, number];
 
 export interface ColoredPoint {
