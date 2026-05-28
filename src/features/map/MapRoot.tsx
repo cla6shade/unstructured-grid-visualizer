@@ -10,7 +10,7 @@ import { useSyncView } from '@/features/map/viewport/hooks/useSyncView';
 import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayProvider';
 import { TimeProvider } from '@/features/map/time/components/TimeProvider';
 import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
-import { SshLayer } from '@/features/layers/contour/ssh/components/SshLayer';
+import { FreeSurfaceLayer } from '@/features/layers/contour/freeSurface/components/FreeSurfaceLayer';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,
@@ -58,7 +58,7 @@ function MapView() {
       >
         <DeckOverlayProvider>
           <CoastlineLayer />
-          <SshLayer />
+          <FreeSurfaceLayer />
         </DeckOverlayProvider>
       </Map>
       <BasemapSelector />

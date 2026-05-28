@@ -2,29 +2,29 @@ import { fetchTile } from '@/lib/network/fetchTile';
 import { fetchConnectivity } from '@/lib/network/fetchConnectivity';
 import { oceanColorMap } from '@/lib/colorMap';
 import type { ContourTileFetcher, Triangle } from '../../types';
-import type { SshTileData } from '../types';
+import type { FreeSurfaceTileData } from '../types';
 
 const H_MIN = 0;
 const H_MAX = 6;
 
 // NOTE: 타일 엔드포인트의 timeIndex 위치는 백엔드 API 확정 후 조정 필요.
-const fetchSshTile = fetchTile<SshTileData>({
+const fetchFreeSurfaceTile = fetchTile<FreeSurfaceTileData>({
   endpoint: ({ z, x, y }, _) =>
     // `/api/ssh/${timeIndex ?? 0}/${z}/${x}/${y}`,
     `/api/${z}/${x}/${y}`,
   fallback: { z: 0, x: 0, y: 0, time_index: 0, points: [] },
-  label: 'ssh',
+  label: 'free-surface',
 });
 
-const fetchSshConnectivity = fetchConnectivity<{ triangles: Triangle[] }>({
+const fetchFreeSurfaceConnectivity = fetchConnectivity<{ triangles: Triangle[] }>({
   endpoint: (z) => `/api/conns/${z}`,
   fallback: { triangles: [] },
-  label: 'ssh-connectivity',
+  label: 'free-surface-connectivity',
 });
 
-export const sshFetcher: ContourTileFetcher = {
+export const freeSurfaceFetcher: ContourTileFetcher = {
   async fetchTile(coord, timeIndex, signal) {
-    const data = await fetchSshTile(coord, timeIndex, signal);
+    const data = await fetchFreeSurfaceTile(coord, timeIndex, signal);
     return data.points.map((p) => ({
       idx: p.idx,
       lat: p.lat,
@@ -33,7 +33,7 @@ export const sshFetcher: ContourTileFetcher = {
     }));
   },
   async fetchConnectivity(z, signal) {
-    const data = await fetchSshConnectivity(z, signal);
+    const data = await fetchFreeSurfaceConnectivity(z, signal);
     return data.triangles;
   },
 };
