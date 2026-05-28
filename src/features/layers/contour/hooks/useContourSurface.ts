@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useViewport } from '@/features/map/viewport/hooks/useViewport';
-import { useTime } from '@/features/map/time/hooks/useTime';
+import { useScenario } from '@/features/map/scenario/hooks/useScenario';
 import { getTileCoordsInBounds } from '@/lib/tile';
 import { pickZoomThreshold } from '@/lib/zoom';
 import { EMPTY_SURFACE, loadSurfaceMesh } from '../lib/surfaceMesh';
@@ -10,7 +10,7 @@ import type { ContourTileFetcher, SurfaceMesh } from '../types';
 const CONTOUR_ZOOMS = [6, 11] as const;
 
 /**
- * viewport(zoom/bounds)와 timeIndex에 따라 contour 표면 메시를 받아온다.
+ * viewport(zoom/bounds)와 timestamp에 따라 contour 표면 메시를 받아온다.
  * useCoastline과 동일한 선언적 패턴 — 상태가 바뀌면 effect가 자동 재실행된다.
  * 캐싱은 브라우저 HTTP 캐시에 위임한다.
  */
@@ -20,7 +20,7 @@ export function useContourSurface(
 ): SurfaceMesh {
   const zoom = useViewport((s) => s.zoom);
   const bounds = useViewport((s) => s.bounds);
-  const timeIndex = useTime((s) => s.timeIndex);
+  const timestamp = useScenario((s) => s.timestamp);
 
   const [surface, setSurface] = useState<SurfaceMesh>(EMPTY_SURFACE);
 
@@ -47,7 +47,7 @@ export function useContourSurface(
       const mesh = await loadSurfaceMesh(
         tiles,
         zoom,
-        timeIndex,
+        timestamp,
         fetcher,
         controller.signal,
       );
@@ -59,7 +59,7 @@ export function useContourSurface(
       cancelled = true;
       controller.abort();
     };
-  }, [zoom, bounds, timeIndex, fetcher, minZoom]);
+  }, [zoom, bounds, timestamp, fetcher, minZoom]);
 
   return surface;
 }

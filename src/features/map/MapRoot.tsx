@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import { Map, type MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { BasemapProvider } from '@/features/map/basemap/components/BasemapProvider';
@@ -8,7 +8,8 @@ import { transformRequest } from '@/features/map/lib/transformRequest';
 import { ViewportProvider } from '@/features/map/viewport/components/ViewportProvider';
 import { useSyncView } from '@/features/map/viewport/hooks/useSyncView';
 import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayProvider';
-import { TimeProvider } from '@/features/map/time/components/TimeProvider';
+import { ScenarioProvider } from '@/features/map/scenario/components/ScenarioProvider';
+import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
 import { FreeSurfaceLayer } from '@/features/layers/contour/freeSurface/components/FreeSurfaceLayer';
 import {
@@ -21,13 +22,17 @@ import {
 } from '@/features/map/constants/mapConfig';
 
 export function MapRoot() {
+  const catalogPromise = useMemo(() => fetchCatalog(), []);
+
   return (
     <ViewportProvider initialState={INITIAL_VIEWPORT}>
-      <TimeProvider>
-        <BasemapProvider>
-          <MapView />
-        </BasemapProvider>
-      </TimeProvider>
+      <Suspense fallback={null}>
+        <ScenarioProvider catalogPromise={catalogPromise}>
+          <BasemapProvider>
+            <MapView />
+          </BasemapProvider>
+        </ScenarioProvider>
+      </Suspense>
     </ViewportProvider>
   );
 }

@@ -19,13 +19,13 @@ export interface SurfaceMesh {
 
 /**
  * contour 레이어가 데이터를 받아오는 방식.
- * - fetchTile: 시간(timeIndex)에 따라 달라지는 타일별 점 데이터
+ * - fetchTile: 시간(KST ISO timestamp)에 따라 달라지는 타일별 점 데이터
  * - fetchConnectivity: zoom별 삼각망 (시간과 무관)
  */
 export interface ContourTileFetcher {
   fetchTile: (
     coord: TileCoord,
-    timeIndex: number,
+    timestamp: string,
     signal?: AbortSignal,
   ) => Promise<ColoredPoint[]>;
   fetchConnectivity: (z: number, signal?: AbortSignal) => Promise<Triangle[]>;

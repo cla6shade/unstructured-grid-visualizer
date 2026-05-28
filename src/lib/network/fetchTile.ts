@@ -4,13 +4,13 @@ import type { TileCoord } from '@/lib/tile';
 
 export type TileFetcher<R> = (
   coord: TileCoord,
-  timeIndex?: number,
+  timestamp?: string,
   signal?: AbortSignal,
 ) => Promise<R>;
 
 export interface FetchTileOptions<R> {
-  /** timeIndex는 시계열 레이어에만 사용. */
-  endpoint: (coord: TileCoord, timeIndex?: number) => string;
+  /** timestamp(KST ISO)는 시계열 레이어에만 사용. */
+  endpoint: (coord: TileCoord, timestamp?: string) => string;
   fallback: R;
   label: string;
 }
@@ -21,9 +21,9 @@ function isNotFoundError(err: unknown): boolean {
 
 export function fetchTile<R>(opts: FetchTileOptions<R>): TileFetcher<R> {
   const { endpoint, fallback, label } = opts;
-  return async (coord, timeIndex, signal) => {
+  return async (coord, timestamp, signal) => {
     try {
-      const { data } = await axiosInstance.get<R>(endpoint(coord, timeIndex), {
+      const { data } = await axiosInstance.get<R>(endpoint(coord, timestamp), {
         signal,
       });
       return data;

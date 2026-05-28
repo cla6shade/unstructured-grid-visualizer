@@ -63,13 +63,13 @@ function buildSurfaceFromPoints(
 export async function loadSurfaceMesh(
   tiles: TileCoord[],
   effectiveZoom: number,
-  timeIndex: number,
+  timestamp: string,
   fetcher: ContourTileFetcher,
   signal?: AbortSignal,
 ): Promise<SurfaceMesh> {
   try {
     const [tilePoints, triangles] = await Promise.all([
-      Promise.all(tiles.map((t) => fetcher.fetchTile(t, timeIndex, signal))),
+      Promise.all(tiles.map((t) => fetcher.fetchTile(t, timestamp, signal))),
       fetcher.fetchConnectivity(effectiveZoom, signal),
     ]);
 
