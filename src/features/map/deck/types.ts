@@ -1,4 +1,3 @@
-import type { StoreApi } from 'zustand';
 import type { Layer } from '@deck.gl/core';
 
 export interface LayerGroup {
@@ -7,17 +6,9 @@ export interface LayerGroup {
   zIndex: number;
 }
 
-export interface DeckLayersState {
-  /** id별 deck.gl 레이어 그룹 */
-  layerGroups: Record<string, LayerGroup>;
-}
-
-export interface DeckLayersStore extends DeckLayersState {
-  /**
-   * id가 가리키는 레이어 그룹을 upsert한다.
-   * 빈 배열을 넘기면 해당 그룹을 제거한다.
-   */
+export interface DeckLayersRegistry {
+  /** id가 가리키는 레이어 그룹을 upsert한다. */
   upsertLayerGroup: (id: string, layers: Layer[], zIndex?: number) => void;
+  /** id가 가리키는 레이어 그룹을 제거한다. */
+  removeLayerGroup: (id: string) => void;
 }
-
-export type DeckLayersStoreInstance = StoreApi<DeckLayersStore>;

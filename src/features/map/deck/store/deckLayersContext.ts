@@ -1,6 +1,6 @@
 import { createContext } from 'react';
-import type { DeckLayersStoreInstance } from '@/features/map/deck/types';
+import type { DeckLayersRegistry } from '@/features/map/deck/types';
 
-export const DeckLayersContext = createContext<DeckLayersStoreInstance | null>(
+export const DeckLayersContext = createContext<DeckLayersRegistry | null>(
   null,
 );
