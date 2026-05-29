@@ -111,25 +111,63 @@ export function createColorMap(colors: string[], alpha = 200) {
 }
 
 // Precompute a `size`-step RGB lookup table from a color map. Each entry is
-// 3 bytes (R, G, B). Avoids per-call oklch→rgb conversion in hot loops.
+// 4 floats (R, G, B, A) in 0..1, ready to feed into deck.gl color buffers.
+// 모든 sRGB↔OKLCH 변환을 여기서 끝내고, 핫 루프에서는 인덱스 조회만 한다.
+export interface ColorLut {
+  rgba: Float32Array;
+  size: number;
+  min: number;
+  max: number;
+}
+
 export function buildColorLut(
   colorMap: (value: number, min: number, max: number) => RGBA,
   min: number,
   max: number,
   size = 256,
-): Uint8Array {
-  const lut = new Uint8Array(size * 3);
+): ColorLut {
+  const rgba = new Float32Array(size * 4);
   for (let i = 0; i < size; i++) {
     const value = min + (i / (size - 1)) * (max - min);
-    const [r, g, b] = colorMap(value, min, max);
-    lut[i * 3] = r;
-    lut[i * 3 + 1] = g;
-    lut[i * 3 + 2] = b;
+    const [r, g, b, a] = colorMap(value, min, max);
+    rgba[i * 4] = r / 255;
+    rgba[i * 4 + 1] = g / 255;
+    rgba[i * 4 + 2] = b / 255;
+    rgba[i * 4 + 3] = a / 255;
   }
-  return lut;
+  return { rgba, size, min, max };
 }
 
-export const oceanColorMap = createColorMap([
+/**
+ * 값 배열을 LUT로 deck.gl용 Float32 RGBA 버퍼로 변환한다.
+ * `transparentValue`(기본 0)인 노드는 alpha 0으로 남겨 렌더링되지 않게 한다.
+ */
+export function valuesToRgbaFloat32(
+  values: Float32Array,
+  lut: ColorLut,
+  transparentValue: number | null = 0,
+): Float32Array {
+  const out = new Float32Array(values.length * 4);
+  const span = lut.max - lut.min;
+  const lastIdx = lut.size - 1;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (transparentValue !== null && v === transparentValue) continue;
+    let t = (v - lut.min) / span;
+    if (t < 0) t = 0;
+    else if (t > 1) t = 1;
+    const idx = (t * lastIdx) | 0;
+    const o = i * 4;
+    const l = idx * 4;
+    out[o] = lut.rgba[l];
+    out[o + 1] = lut.rgba[l + 1];
+    out[o + 2] = lut.rgba[l + 2];
+    out[o + 3] = lut.rgba[l + 3];
+  }
+  return out;
+}
+
+const OCEAN_STOPS = [
   '#E4E521',
   '#D2E826',
   '#B9E92E',
@@ -146,4 +184,9 @@ export const oceanColorMap = createColorMap([
   '#4D7DFF',
   '#5670FF',
   '#5F63FF',
-]);
+];
+
+export const oceanColorMap = createColorMap(OCEAN_STOPS);
+
+// 수심용: 낮은 값=파랑, 높은 값=노랑
+export const depthColorMap = createColorMap([...OCEAN_STOPS].reverse());
