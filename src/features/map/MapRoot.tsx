@@ -11,7 +11,7 @@ import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayP
 import { ScenarioProvider } from '@/features/map/scenario/components/ScenarioProvider';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
-import { FreeSurfaceLayer } from '@/features/layers/contour/freeSurface/components/FreeSurfaceLayer';
+import { FreeSurfaceLayer } from '@/features/layers/freeSurface/components/FreeSurfaceLayer';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,

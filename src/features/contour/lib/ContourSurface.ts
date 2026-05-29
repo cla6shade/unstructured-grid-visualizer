@@ -4,7 +4,7 @@ import { Model, Geometry } from '@luma.gl/engine';
 
 const vs = `\
 #version 300 es
-#define SHADER_NAME surface-mesh-layer-vs
+#define SHADER_NAME contour-surface-vs
 
 in vec3 positions;
 in vec4 vertexColors;
@@ -21,7 +21,7 @@ void main(void) {
 
 const fs = `\
 #version 300 es
-#define SHADER_NAME surface-mesh-layer-fs
+#define SHADER_NAME contour-surface-fs
 
 precision highp float;
 
@@ -34,7 +34,7 @@ void main(void) {
 }
 `;
 
-export interface SurfaceMeshLayerProps {
+export interface ContourSurfaceProps {
   id: string;
   positions: Float32Array;
   colors: Float32Array;
@@ -44,17 +44,17 @@ export interface SurfaceMeshLayerProps {
   maskInverted?: boolean;
 }
 
-type InternalSurfaceMeshLayerProps = SurfaceMeshLayerProps & { data: never[] };
+type InternalContourSurfaceProps = ContourSurfaceProps & { data: never[] };
 
-const defaultProps: DefaultProps<InternalSurfaceMeshLayerProps> = {
+const defaultProps: DefaultProps<InternalContourSurfaceProps> = {
   positions: { type: 'object' as const, value: new Float32Array(0) },
   colors: { type: 'object' as const, value: new Float32Array(0) },
   indices: { type: 'object' as const, value: new Uint32Array(0) },
 };
 
-export class SurfaceMeshLayer extends Layer<InternalSurfaceMeshLayerProps> {
+export class ContourSurface extends Layer<InternalContourSurfaceProps> {
   static defaultProps = defaultProps;
-  static layerName = 'SurfaceMeshLayer';
+  static layerName = 'ContourSurface';
 
   declare state: { model?: Model };
 

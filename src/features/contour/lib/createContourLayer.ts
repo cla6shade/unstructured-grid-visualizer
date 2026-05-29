@@ -1,6 +1,6 @@
 import type { Layer } from '@deck.gl/core';
 import { MASK_EXTENSIONS } from '@/features/layers/coastline/lib/maskExtension';
-import { SurfaceMeshLayer } from './SurfaceMeshLayer';
+import { ContourSurface } from './ContourSurface';
 import type { SurfaceMesh } from '../types';
 
 export interface ContourLayerProps {
@@ -18,7 +18,7 @@ export function createContourLayer({
   maskId,
   maskInverted = false,
 }: ContourLayerProps): Layer {
-  return new SurfaceMeshLayer({
+  return new ContourSurface({
     id,
     data: [],
     positions: surface.positions,
