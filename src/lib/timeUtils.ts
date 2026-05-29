@@ -6,9 +6,9 @@ export function parseKstNaive(s: string): number {
   return new Date(`${s}+09:00`).getTime();
 }
 
-/** epoch ms에 9시간을 더한 뒤 ISO 문자열로 변환 (KST wall-clock을 Z suffix로 표기) */
+/** epoch ms에 9시간을 더한 뒤 ISO 문자열로 변환 (KST wall-clock, ms/Z 생략) */
 export function formatKstIso(ms: number): string {
-  return new Date(ms + KST_OFFSET_MS).toISOString();
+  return new Date(ms + KST_OFFSET_MS).toISOString().replace(/\.\d{3}Z$/, '');
 }
 
 /**
