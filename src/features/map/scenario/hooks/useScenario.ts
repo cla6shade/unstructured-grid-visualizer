@@ -1,6 +1,6 @@
 import { use } from 'react';
 import { useStore } from 'zustand';
-import type { ScenarioStore } from '@/features/map/scenario/lib/types';
+import type { ScenarioStore } from '@/features/map/scenario/types';
 import { ScenarioContext } from '@/features/map/scenario/store/scenarioContext';
 
 export function useScenario<T>(selector: (state: ScenarioStore) => T): T {

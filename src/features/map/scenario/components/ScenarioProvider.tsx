@@ -2,7 +2,7 @@ import { use, useState, type ReactNode } from 'react';
 import { createScenarioStore } from '@/features/map/scenario/store/scenarioStore';
 import { ScenarioContext } from '@/features/map/scenario/store/scenarioContext';
 import { deriveInitialScenario } from '@/features/map/scenario/lib/initialScenario';
-import type { SubsetCatalog } from '@/features/map/scenario/lib/types';
+import type { SubsetCatalog } from '@/features/map/scenario/types';
 
 interface ScenarioProviderProps {
   catalogPromise: Promise<SubsetCatalog>;

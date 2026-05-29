@@ -1,7 +1,7 @@
 import type {
   ScenarioState,
   SubsetCatalog,
-} from '@/features/map/scenario/lib/types';
+} from '@/features/map/scenario/types';
 import { nearestHourlyTimestamp } from '@/lib/timeUtils';
 
 /**
@@ -32,6 +32,7 @@ export function deriveInitialScenario(catalog: SubsetCatalog): ScenarioState {
     );
   }
   return {
+    catalog,
     typhoonId: lastTyphoon.typhoon_id,
     scenarioId,
     timestamp: nearestHourlyTimestamp(times.first_time, times.last_time),

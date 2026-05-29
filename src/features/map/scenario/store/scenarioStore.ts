@@ -4,7 +4,7 @@ import type {
   ScenarioState,
   ScenarioStore,
   ScenarioStoreInstance,
-} from '@/features/map/scenario/lib/types';
+} from '@/features/map/scenario/types';
 
 export function createScenarioStore(
   initial: ScenarioState,

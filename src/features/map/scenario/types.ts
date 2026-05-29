@@ -36,6 +36,7 @@ export interface SubsetCatalog {
 }
 
 export interface ScenarioState {
+  catalog: SubsetCatalog;
   scenarioId: string;
   typhoonId: string;
   /** KST 타임존 표기 포함 ISO 문자열 (예: "2022-09-01T12:00:00+09:00") */
