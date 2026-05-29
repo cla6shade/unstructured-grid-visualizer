@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { axiosInstance } from '@/lib/network/axiosInstance';
+import { apiFetch } from '@/lib/network/apiFetch';
 import type { TileCoord } from '@/lib/tile';
 
 export type TileFetcher<R> = (
@@ -15,21 +14,22 @@ export interface FetchTileOptions<R> {
   label: string;
 }
 
-function isNotFoundError(err: unknown): boolean {
-  return axios.isAxiosError(err) && err.response?.status === 404;
-}
-
 export function fetchTile<R>(opts: FetchTileOptions<R>): TileFetcher<R> {
   const { endpoint, fallback, label } = opts;
   return async (coord, timestamp, signal) => {
     try {
-      const { data } = await axiosInstance.get<R>(endpoint(coord, timestamp), {
-        signal,
-      });
-      return data;
+      const res = await apiFetch(endpoint(coord, timestamp), { signal });
+      if (res.status === 404) return fallback;
+      if (!res.ok) {
+        console.error(
+          `[${label}] tile ${coord.z}/${coord.x}/${coord.y} failed`,
+          res.status,
+        );
+        return fallback;
+      }
+      return (await res.json()) as R;
     } catch (err) {
       if (signal?.aborted) throw err;
-      if (isNotFoundError(err)) return fallback;
       console.error(`[${label}] tile ${coord.z}/${coord.x}/${coord.y} failed`, err);
       return fallback;
     }
