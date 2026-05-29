@@ -9,6 +9,7 @@ import { ViewportProvider } from '@/features/map/viewport/components/ViewportPro
 import { useSyncView } from '@/features/map/viewport/hooks/useSyncView';
 import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayProvider';
 import { ScenarioProvider } from '@/features/map/scenario/components/ScenarioProvider';
+import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
 import { FreeSurfaceLayer } from '@/features/layers/freeSurface/components/FreeSurfaceLayer';
@@ -69,6 +70,7 @@ function MapView() {
         </DeckOverlayProvider>
       </Map>
       <BasemapSelector />
+      <DebugStatsOverlay />
     </div>
   );
 }
