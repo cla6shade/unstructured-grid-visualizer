@@ -5,6 +5,9 @@ import { fetchMeshTile } from '@/features/mesh/lib/fetchMeshTile';
 import { deriveMesh, type DerivedMesh } from '../lib/tileDerive';
 import type { ContourTileFetcher } from '../types';
 
+/** mesh fetch에 필요한 부분만. ContourTileFetcher와 VectorTileFetcher 모두 이를 만족한다. */
+type MeshFetcher = Pick<ContourTileFetcher, 'meshUrl' | 'meshKey'>;
+
 /**
  * mesh 타일별로 (positions, conn, globalNodes) 파생물을 react-query 캐시에 담는다.
  * 키는 fetcher.meshKey(coord) + 'derived' — fetcher의 (location, layer)별로 자연 분리되며
@@ -15,7 +18,7 @@ import type { ContourTileFetcher } from '../types';
  */
 export function useDerivedMeshTiles(
   tiles: TileCoord[],
-  fetcher: ContourTileFetcher,
+  fetcher: MeshFetcher,
 ): readonly (DerivedMesh | undefined)[] {
   const qc = useQueryClient();
   const results = useQueries({
