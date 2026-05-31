@@ -16,6 +16,7 @@ import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
 import { FreeSurfaceLayer } from '@/features/layers/freeSurface/components/FreeSurfaceLayer';
 import { WaterDepthLayer } from '@/features/layers/waterDepth/components/WaterDepthLayer';
+import { CurrentLayer } from '@/features/layers/current/components/CurrentLayer';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,
@@ -69,6 +70,7 @@ function MapView() {
           <CoastlineLayer />
           <FreeSurfaceLayer />
           <WaterDepthLayer />
+          <CurrentLayer />
         </DeckOverlayProvider>
       </Map>
       <BasemapSelector />
