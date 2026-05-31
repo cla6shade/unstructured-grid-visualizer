@@ -19,27 +19,19 @@ export function DeckOverlayProvider({ children }: { children: ReactNode }) {
 
   const registry = useMemo<DeckLayersRegistry>(
     () => {
-      const syncOverlayLayers = (reason: string) => {
+      const syncOverlayLayers = () => {
         const nextLayers = Object.values(layerGroupsRef.current)
           .sort((a, b) => a.zIndex - b.zIndex)
           .flatMap((group) => group.layers);
-
-        console.log('[DeckOverlay] setProps → map re-render', {
-          reason,
-          layerCount: nextLayers.length,
-          groupIds: Object.keys(layerGroupsRef.current),
-          timestamp: performance.now().toFixed(2),
-        });
 
         overlay.setProps({ layers: nextLayers });
       };
 
       return {
         upsertLayerGroup(id, layers, zIndex = 0) {
-          console.log('[DeckOverlay] upsertLayerGroup', { id, zIndex, layerCount: layers.length });
           delete pendingRemovalIdsRef.current[id];
           layerGroupsRef.current[id] = { layers, zIndex };
-          syncOverlayLayers(`upsert:${id}`);
+          syncOverlayLayers();
         },
         removeLayerGroup(id) {
           const removalId = (pendingRemovalIdsRef.current[id] ?? 0) + 1;
@@ -50,7 +42,7 @@ export function DeckOverlayProvider({ children }: { children: ReactNode }) {
 
             delete pendingRemovalIdsRef.current[id];
             delete layerGroupsRef.current[id];
-            syncOverlayLayers(`remove:${id}`);
+            syncOverlayLayers();
           });
         },
       };
