@@ -1,0 +1,23 @@
+import { useMemo } from 'react';
+import { useViewport } from '@/features/map/viewport/hooks/useViewport';
+import { getTileCoordsInBounds, type TileCoord } from '@/lib/tile';
+
+/**
+ * 현재 viewport(zoom/bounds) 안에 보이는 z 타일 좌표를 계산한다.
+ * z는 호출부가 결정한다(예: contour/vector는 6, 향후 다른 레이어는 11 등).
+ *
+ * @param z        타일 줌 레벨.
+ * @param minZoom  이 줌 미만이면 빈 배열(타일 미표시). 기본값 z — "z 타일은 zoom ≥ z에서만".
+ * @param padding  화면 밖으로 확장할 타일 링 두께. 기본 1.
+ */
+export function useTilesInView(
+  z: number,
+  { padding = 1, minZoom = z }: { padding?: number; minZoom?: number } = {},
+): TileCoord[] {
+  const zoom = useViewport((s) => s.zoom);
+  const bounds = useViewport((s) => s.bounds);
+  return useMemo(() => {
+    if (zoom < minZoom) return [];
+    return getTileCoordsInBounds(z, bounds, { padding });
+  }, [z, minZoom, padding, zoom, bounds]);
+}
