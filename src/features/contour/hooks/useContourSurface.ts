@@ -1,34 +1,14 @@
 import { useMemo } from 'react';
-import { useViewport } from '@/features/map/viewport/hooks/useViewport';
-import { useScenario } from '@/features/map/scenario/hooks/useScenario';
-import { getTileCoordsInBounds, type TileCoord } from '@/lib/tile';
+import { useTilesInView } from '@/features/tiles/hooks/useTilesInView';
+import { useFetcherCtx } from '@/features/tiles/hooks/useFetcherCtx';
+import { useDerivedMeshTiles } from '@/features/tiles/hooks/useDerivedMeshTiles';
+import { useValueBufferTiles } from '@/features/tiles/hooks/useValueBufferTiles';
 import { EMPTY_SURFACE } from '../lib/emptySurface';
 import { mergeSurface, type DerivedTile } from '../lib/mergeSurface';
-import { useDerivedMeshTiles } from './useDerivedMeshTiles';
-import { useColoredTiles } from './useColoredTiles';
-import type { ContourTileFetcher, FetcherCtx, SurfaceMesh } from '../types';
+import type { ContourTileFetcher, SurfaceMesh } from '../types';
 
 /** contour 데이터는 z=6 타일로만 제공된다. zoom ≥ 6에서 z=6 타일을 그대로 표시. */
 const CONTOUR_TILE_Z = 6;
-
-function useTilesInView(): TileCoord[] {
-  const zoom = useViewport((s) => s.zoom);
-  const bounds = useViewport((s) => s.bounds);
-  return useMemo(() => {
-    if (zoom < CONTOUR_TILE_Z) return [];
-    return getTileCoordsInBounds(CONTOUR_TILE_Z, bounds, { padding: 1 });
-  }, [zoom, bounds]);
-}
-
-function useFetcherCtx(): FetcherCtx {
-  const typhoonId = useScenario((s) => s.typhoonId);
-  const scenarioId = useScenario((s) => s.scenarioId);
-  const timestamp = useScenario((s) => s.timestamp);
-  return useMemo(
-    () => ({ typhoonId, scenarioId, timestamp }),
-    [typhoonId, scenarioId, timestamp],
-  );
-}
 
 /**
  * viewport(zoom/bounds)와 scenario(typhoon/scenario/timestamp)에 따라
@@ -40,11 +20,11 @@ function useFetcherCtx(): FetcherCtx {
  * mergeSurface는 캐시된 typed array들을 concat·remap만 수행.
  */
 export function useContourSurface(fetcher: ContourTileFetcher): SurfaceMesh {
-  const tiles = useTilesInView();
+  const tiles = useTilesInView(CONTOUR_TILE_Z);
   const ctx = useFetcherCtx();
 
   const derived = useDerivedMeshTiles(tiles, fetcher);
-  const colors = useColoredTiles(tiles, fetcher, ctx);
+  const colors = useValueBufferTiles(tiles, fetcher, ctx, fetcher.toColors, 'colors');
 
   return useMemo(() => {
     const pairs: DerivedTile[] = [];

@@ -1,5 +1,5 @@
 import { EMPTY_VECTOR_MESH } from './emptyVectorMesh';
-import type { DerivedMesh } from '@/features/contour/lib/tileDerive';
+import type { DerivedMesh } from '@/features/tiles/lib/deriveMesh';
 import type { VectorMesh } from '../types';
 
 export interface DerivedVectorTile {

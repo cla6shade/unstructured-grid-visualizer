@@ -1,5 +1,5 @@
 import { EMPTY_SURFACE } from './emptySurface';
-import type { DerivedMesh } from './tileDerive';
+import type { DerivedMesh } from '@/features/tiles/lib/deriveMesh';
 import type { SurfaceMesh } from '../types';
 
 export interface DerivedTile {
