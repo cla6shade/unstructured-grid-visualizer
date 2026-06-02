@@ -11,6 +11,8 @@ import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayP
 import { ScenarioProvider } from '@/features/map/scenario/components/ScenarioProvider';
 import { ScenarioTimeSelector } from '@/features/map/scenario/components/ScenarioTimeSelector';
 import { LayerSelector } from '@/features/map/layerSelector/components/LayerSelector';
+import { LocationSelector } from '@/features/map/locationSelector/components/LocationSelector';
+import { useLocationNavigation } from '@/features/map/locationSelector/hooks/useLocationNavigation';
 import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
 import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
@@ -56,6 +58,7 @@ function MapView() {
   const mapRef = useRef<MapRef | null>(null);
   const basemap = useBasemap((s) => s.basemap);
   const syncView = useSyncView(mapRef);
+  useLocationNavigation(mapRef);
 
   return (
     <div className="w-dvw h-dvh absolute top-0 left-0">
@@ -81,6 +84,7 @@ function MapView() {
         </DeckOverlayProvider>
       </Map>
       <BasemapSelector />
+      <LocationSelector />
       <LayerSelector />
       <ScenarioTimeSelector />
       <LoadingOverlay />
