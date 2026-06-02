@@ -1,5 +1,6 @@
 import { EMPTY_SURFACE } from './emptySurface';
 import type { DerivedMesh } from '@/features/tiles/lib/deriveMesh';
+import { lngLatInAnyRect, type LngLatRect } from '@/lib/tile';
 import type { SurfaceMesh } from '../types';
 
 export interface DerivedTile {
@@ -11,8 +12,15 @@ export interface DerivedTile {
  * tile별로 미리 계산된 (positions, colors, conn) 파생물을 받아 GPU 버퍼로 합친다.
  * 노드는 globalNodes 첫 등장 순서로 통합 vertex 배열에 누적, 삼각형은 정렬된 vertex
  * triplet으로 dedup. 색상 변환과 positions/conn 추출은 호출자(파생 캐시)에서 끝났다는 전제.
+ *
+ * exclude가 주어지면 centroid(lng/lat)가 그 사각형 안에 드는 삼각형을 버린다 — 더 높은
+ * 해상도(z=11) 타일이 덮는 영역에서 이 베이스(z=6) 메시에 구멍을 뚫는 용도. 빈 배열이면
+ * 기존과 동일하게 동작한다.
  */
-export function mergeSurface(tiles: readonly DerivedTile[]): SurfaceMesh {
+export function mergeSurface(
+  tiles: readonly DerivedTile[],
+  exclude: readonly LngLatRect[] = [],
+): SurfaceMesh {
   if (tiles.length === 0) return EMPTY_SURFACE;
 
   let maxGlobal = 0;
@@ -64,6 +72,12 @@ export function mergeSurface(tiles: readonly DerivedTile[]): SurfaceMesh {
       const b = globalToVertex[conn[t * 3 + 1]];
       const c = globalToVertex[conn[t * 3 + 2]];
       if (a === -1 || b === -1 || c === -1) continue;
+      if (exclude.length) {
+        const cx = (positionsBuf[a * 3] + positionsBuf[b * 3] + positionsBuf[c * 3]) / 3;
+        const cy =
+          (positionsBuf[a * 3 + 1] + positionsBuf[b * 3 + 1] + positionsBuf[c * 3 + 1]) / 3;
+        if (lngLatInAnyRect(cx, cy, exclude)) continue;
+      }
       if (isDuplicate(seen, a, b, c)) continue;
       indicesTmp[written++] = a;
       indicesTmp[written++] = b;

@@ -1,5 +1,6 @@
 import { EMPTY_VECTOR_MESH } from './emptyVectorMesh';
 import type { DerivedMesh } from '@/features/tiles/lib/deriveMesh';
+import { lngLatInAnyRect, type LngLatRect } from '@/lib/tile';
 import type { VectorMesh } from '../types';
 
 export interface DerivedVectorTile {
@@ -12,9 +13,13 @@ export interface DerivedVectorTile {
  * tile별로 미리 계산된 (positions, vectors, conn) 파생물을 받아 하나의 VectorMesh로 합친다.
  * contour의 mergeSurface와 동일한 통합/삼각형 dedup 전략을 쓰되, 노드 attribute가
  * RGBA(4채널)가 아니라 (u, v)(2채널)인 점만 다르다. indices는 추후 barycentric 보간을 위해 보존.
+ *
+ * exclude가 주어지면 centroid(lng/lat)가 그 사각형 안에 드는 삼각형을 버린다(mergeSurface와 동일,
+ * z=11 디테일이 덮는 영역에서 베이스 메시에 구멍을 뚫는 용도).
  */
 export function mergeVectorSurface(
   tiles: readonly DerivedVectorTile[],
+  exclude: readonly LngLatRect[] = [],
 ): VectorMesh {
   if (tiles.length === 0) return EMPTY_VECTOR_MESH;
 
@@ -65,6 +70,12 @@ export function mergeVectorSurface(
       const b = globalToVertex[conn[t * 3 + 1]];
       const c = globalToVertex[conn[t * 3 + 2]];
       if (a === -1 || b === -1 || c === -1) continue;
+      if (exclude.length) {
+        const cx = (positionsBuf[a * 3] + positionsBuf[b * 3] + positionsBuf[c * 3]) / 3;
+        const cy =
+          (positionsBuf[a * 3 + 1] + positionsBuf[b * 3 + 1] + positionsBuf[c * 3 + 1]) / 3;
+        if (lngLatInAnyRect(cx, cy, exclude)) continue;
+      }
       if (isDuplicate(seen, a, b, c)) continue;
       indicesTmp[written++] = a;
       indicesTmp[written++] = b;

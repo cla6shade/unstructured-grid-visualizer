@@ -24,6 +24,48 @@ export function latToTileY(lat: number, z: number): number {
   );
 }
 
+/** 타일 x 인덱스 → 그 타일 서쪽 경계의 경도(lng). x+1이면 동쪽 경계. */
+export function tileXToLng(x: number, z: number): number {
+  return (x / 2 ** z) * 360 - 180;
+}
+
+/** 타일 y 인덱스 → 그 타일 북쪽 경계의 위도(lat). y+1이면 남쪽 경계. */
+export function tileYToLat(y: number, z: number): number {
+  const n = Math.PI - (2 * Math.PI * y) / 2 ** z;
+  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+}
+
+export interface LngLatRect {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+}
+
+/** 타일 좌표의 lng/lat 경계 사각형. */
+export function tileLngLatBounds({ x, y, z }: TileCoord): LngLatRect {
+  return {
+    west: tileXToLng(x, z),
+    east: tileXToLng(x + 1, z),
+    north: tileYToLat(y, z),
+    south: tileYToLat(y + 1, z),
+  };
+}
+
+/** 점(lng, lat)이 사각형 중 하나라도 안에 드는지. */
+export function lngLatInAnyRect(
+  lng: number,
+  lat: number,
+  rects: readonly LngLatRect[],
+): boolean {
+  for (const r of rects) {
+    if (lng >= r.west && lng <= r.east && lat >= r.south && lat <= r.north) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function getTileCoordsInBounds(
   z: number,
   bounds: LatLngBound,
