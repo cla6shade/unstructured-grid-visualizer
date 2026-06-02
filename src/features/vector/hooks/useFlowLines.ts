@@ -13,19 +13,25 @@ export interface FlowSegments {
   count: number;
 }
 
-const PARTICLE_COUNT = 4000;
-/** 파티클당 trail 점 개수. 세그먼트는 (TRAIL_LENGTH - 1)개. */
-const TRAIL_LENGTH = 100;
-/** (u, v) 크기(m/s 가정) → 위도(deg)/초 이동량. 실데이터로 튜닝 필요. */
-const FLOW_SPEED = 2;
-/** 파티클 수명(초). staggered respawn을 위해 ±랜덤. */
-const MIN_AGE = 3;
-const AGE_JITTER = 3;
-/** dt 폭주 방지(탭 비활성 후 복귀 등). */
-const MAX_DT = 0.05;
 const TRAIL_COLOR: readonly [number, number, number] = [180, 220, 255];
 const HEAD_ALPHA = 230;
 const DEG2RAD = Math.PI / 180;
+
+/** 흐름 시뮬레이션 튜닝 파라미터. */
+export interface FlowParams {
+  /** 파티클 수(density). 클수록 촘촘하다. */
+  particleCount: number;
+  /** 파티클당 trail 점 개수. 세그먼트는 (trailLength - 1)개. */
+  trailLength: number;
+  /** (u, v) 크기(m/s 가정) → 위도(deg)/초 이동량. 실데이터로 튜닝 필요. */
+  flowSpeed: number;
+  /** 파티클 최소 수명(초). staggered respawn을 위해 ageJitter만큼 ±랜덤. */
+  minAge: number;
+  /** 수명 랜덤 가산폭(초). */
+  ageJitter: number;
+  /** dt 폭주 방지 상한(초, 탭 비활성 후 복귀 등). */
+  maxDt: number;
+}
 
 interface Sim {
   px: Float32Array;
@@ -55,22 +61,29 @@ function makeBuffer(segCount: number): BufferSet {
   };
 }
 
-function makeSim(): Sim {
+function makeSim(particleCount: number, trailLength: number): Sim {
   return {
-    px: new Float32Array(PARTICLE_COUNT),
-    py: new Float32Array(PARTICLE_COUNT),
-    age: new Float32Array(PARTICLE_COUNT),
-    maxAge: new Float32Array(PARTICLE_COUNT),
-    trailX: new Float32Array(PARTICLE_COUNT * TRAIL_LENGTH),
-    trailY: new Float32Array(PARTICLE_COUNT * TRAIL_LENGTH),
-    len: new Float32Array(PARTICLE_COUNT),
-    dying: new Uint8Array(PARTICLE_COUNT),
+    px: new Float32Array(particleCount),
+    py: new Float32Array(particleCount),
+    age: new Float32Array(particleCount),
+    maxAge: new Float32Array(particleCount),
+    trailX: new Float32Array(particleCount * trailLength),
+    trailY: new Float32Array(particleCount * trailLength),
+    len: new Float32Array(particleCount),
+    dying: new Uint8Array(particleCount),
     seeded: false,
   };
 }
 
 /** 파티클 i를 mesh 내부 임의 지점에 재배치하고 trail을 한 점으로 접는다. */
-function respawn(sim: Sim, field: VelocityField, i: number): void {
+function respawn(
+  sim: Sim,
+  field: VelocityField,
+  i: number,
+  trailLength: number,
+  minAge: number,
+  ageJitter: number,
+): void {
   const probe: [number, number] = [0, 0];
   let lon = 0;
   let lat = 0;
@@ -82,11 +95,11 @@ function respawn(sim: Sim, field: VelocityField, i: number): void {
   sim.px[i] = lon;
   sim.py[i] = lat;
   sim.age[i] = 0;
-  sim.maxAge[i] = MIN_AGE + Math.random() * AGE_JITTER;
+  sim.maxAge[i] = minAge + Math.random() * ageJitter;
   sim.len[i] = 1;
   sim.dying[i] = 0;
-  const base = i * TRAIL_LENGTH;
-  for (let k = 0; k < TRAIL_LENGTH; k++) {
+  const base = i * trailLength;
+  for (let k = 0; k < trailLength; k++) {
     sim.trailX[base + k] = lon;
     sim.trailY[base + k] = lat;
   }
@@ -104,10 +117,18 @@ export function useFlowLines(
   mesh: VectorMesh,
   visible: boolean,
   onSegments: (segments: FlowSegments | null) => void,
+  params: FlowParams,
 ): void {
+  const { particleCount, trailLength } = params;
+
   // rAF 루프가 매 프레임 최신 콜백을 쓰도록 ref로 들고, 콜백 교체가 effect를 재기동하지 않게 한다.
   const cbRef = useRef(onSegments);
   cbRef.current = onSegments;
+
+  // 버퍼 크기와 무관한 파라미터(flowSpeed/minAge/ageJitter/maxDt)는 ref로 들어
+  // effect 재기동(흐름 끊김) 없이 매 프레임 최신값으로 반영한다.
+  const dynRef = useRef(params);
+  dynRef.current = params;
 
   const fieldRef = useRef<VelocityField | null>(null);
   const simRef = useRef<Sim | null>(null);
@@ -131,11 +152,20 @@ export function useFlowLines(
       return;
     }
 
-    const segCount = PARTICLE_COUNT * (TRAIL_LENGTH - 1);
-    if (!buffersRef.current) {
+    const segCount = particleCount * (trailLength - 1);
+    // 크기에 영향을 주는 파라미터(particleCount/trailLength) 변경 시에만 버퍼/sim을 재생성
+    // → 흐름이 리셋된다. 나머지 파라미터는 dynRef로 즉시 반영(끊김 없음).
+    // (timestamp 스크럽으로는 effect가 재실행되지 않아 흐름이 유지된다.)
+    if (!buffersRef.current || buffersRef.current[0].colors.length !== segCount * 4) {
       buffersRef.current = [makeBuffer(segCount), makeBuffer(segCount)];
     }
-    if (!simRef.current) simRef.current = makeSim();
+    if (
+      !simRef.current ||
+      simRef.current.px.length !== particleCount ||
+      simRef.current.trailX.length !== particleCount * trailLength
+    ) {
+      simRef.current = makeSim(particleCount, trailLength);
+    }
 
     let raf = 0;
     let last = 0;
@@ -145,20 +175,22 @@ export function useFlowLines(
       raf = requestAnimationFrame(step);
       const field = fieldRef.current;
       const sim = simRef.current!;
-      const dt = last ? Math.min((now - last) / 1000, MAX_DT) : 0;
+      const { flowSpeed, minAge, ageJitter, maxDt } = dynRef.current;
+      const dt = last ? Math.min((now - last) / 1000, maxDt) : 0;
       last = now;
 
       if (!field) return;
       if (!sim.seeded) {
-        for (let i = 0; i < PARTICLE_COUNT; i++) respawn(sim, field, i);
+        for (let i = 0; i < particleCount; i++)
+          respawn(sim, field, i, trailLength, minAge, ageJitter);
         sim.seeded = true;
       }
 
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
+      for (let i = 0; i < particleCount; i++) {
         // 소멸 중: 머리는 멈춘 채 꼬리가 끝점으로 따라붙어 trail이 줄어든다.
         if (sim.dying[i]) {
           sim.len[i] -= 1;
-          if (sim.len[i] <= 1) respawn(sim, field, i);
+          if (sim.len[i] <= 1) respawn(sim, field, i, trailLength, minAge, ageJitter);
           continue;
         }
 
@@ -171,27 +203,27 @@ export function useFlowLines(
           continue;
         }
         // 현재 위치를 trail head로 기록 후 전진.
-        const base = i * TRAIL_LENGTH;
-        for (let k = TRAIL_LENGTH - 1; k > 0; k--) {
+        const base = i * trailLength;
+        for (let k = trailLength - 1; k > 0; k--) {
           sim.trailX[base + k] = sim.trailX[base + k - 1];
           sim.trailY[base + k] = sim.trailY[base + k - 1];
         }
         sim.trailX[base] = px;
         sim.trailY[base] = py;
-        if (sim.len[i] < TRAIL_LENGTH) sim.len[i] += 1;
+        if (sim.len[i] < trailLength) sim.len[i] += 1;
         const cosLat = Math.max(Math.cos(py * DEG2RAD), 0.01);
-        sim.px[i] = px + (vel[0] * FLOW_SPEED * dt) / cosLat;
-        sim.py[i] = py + vel[1] * FLOW_SPEED * dt;
+        sim.px[i] = px + (vel[0] * flowSpeed * dt) / cosLat;
+        sim.py[i] = py + vel[1] * flowSpeed * dt;
       }
 
       // trail → 세그먼트 버퍼 채우기 (더블 버퍼 번갈아).
       const buf = buffersRef.current![flipRef.current];
       flipRef.current ^= 1;
       const { sources, targets, colors } = buf;
-      const segPerParticle = TRAIL_LENGTH - 1;
+      const segPerParticle = trailLength - 1;
       const [r, g, b] = TRAIL_COLOR;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const base = i * TRAIL_LENGTH;
+      for (let i = 0; i < particleCount; i++) {
+        const base = i * trailLength;
         // 유효 trail 점 len개 → 그릴 세그먼트는 (len - 1)개.
         const validSeg = sim.len[i] - 1;
         for (let k = 0; k < segPerParticle; k++) {
@@ -224,5 +256,5 @@ export function useFlowLines(
       cancelAnimationFrame(raf);
       cbRef.current(null);
     };
-  }, [visible]);
+  }, [visible, particleCount, trailLength]);
 }

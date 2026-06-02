@@ -8,11 +8,15 @@ import {
 } from '@/features/vector/hooks/useFlowLines';
 import { createFlowLayer } from '@/features/vector/lib/createFlowLayer';
 import { useReportInitialLoad } from '@/features/map/loading/hooks/useReportInitialLoad';
+import { useCurrentDensityStore } from '@/features/map/currentDensity/store/currentDensityStore';
 import type { FlowLayerSpec, LayerId } from '../registry';
 
 export function FlowLayer({ spec }: { spec: FlowLayerSpec }) {
   const visible = useLayerStore((s) => s.layers[spec.id as LayerId]);
   const { base, detail, isLoaded } = useVectorSurface(spec.fetcher, visible);
+  // 전국(base)·항구(detail) 흐름의 파티클 밀도를 각각 독립적으로 조절한다.
+  const nationwideDensity = useCurrentDensityStore((s) => s.nationwide);
+  const portDensity = useCurrentDensityStore((s) => s.port);
   useReportInitialLoad(spec.id as LayerId, visible && isLoaded);
   const registry = useDeckLayersRegistry();
 
@@ -30,8 +34,22 @@ export function FlowLayer({ spec }: { spec: FlowLayerSpec }) {
     [registry, detailGroupId, spec.zIndex],
   );
 
-  useFlowLines(base, visible, onBaseSegments);
-  useFlowLines(detail, visible, onDetailSegments);
+  useFlowLines(base, visible, onBaseSegments, {
+    particleCount: nationwideDensity,
+    trailLength: 100,
+    flowSpeed: 2,
+    minAge: 3,
+    ageJitter: 3,
+    maxDt: 0.05,
+  });
+  useFlowLines(detail, visible, onDetailSegments, {
+    particleCount: portDensity,
+    trailLength: 30,
+    flowSpeed: 0.7,
+    minAge: 1,
+    ageJitter: 1.5,
+    maxDt: 0.05,
+  });
 
   return null;
 }

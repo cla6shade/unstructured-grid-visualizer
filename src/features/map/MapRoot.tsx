@@ -16,6 +16,7 @@ import { LocationPinLayer } from '@/features/map/locationSelector/components/Loc
 import { useFlyToLocation } from '@/features/map/locationSelector/hooks/useFlyToLocation';
 import { useSyncLocationFromViewport } from '@/features/map/locationSelector/hooks/useSyncLocationFromViewport';
 import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
+import { CurrentDensityControl } from '@/features/map/currentDensity/components/CurrentDensityControl';
 import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { LoadingStatusProvider } from '@/features/map/loading/components/LoadingStatusProvider';
@@ -95,6 +96,7 @@ function MapView() {
       <LoadingOverlay />
       <div className="absolute bottom-[16px] right-10 z-[1000] flex flex-col items-end gap-2">
         <DebugStatsOverlay />
+        <CurrentDensityControl />
         <LayerColorBars />
       </div>
     </div>
