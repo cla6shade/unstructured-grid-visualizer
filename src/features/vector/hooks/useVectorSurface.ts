@@ -3,12 +3,10 @@ import { useTilesInView } from '@/features/tiles/hooks/useTilesInView';
 import { useFetcherCtx } from '@/features/tiles/hooks/useFetcherCtx';
 import { useDerivedMeshTiles } from '@/features/tiles/hooks/useDerivedMeshTiles';
 import { useValueBufferTiles } from '@/features/tiles/hooks/useValueBufferTiles';
+import { useLocationStore } from '@/features/map/locationSelector/store/locationStore';
 import { EMPTY_VECTOR_MESH } from '../lib/emptyVectorMesh';
 import { mergeVectorSurface, type DerivedVectorTile } from '../lib/mergeVectorSurface';
 import type { VectorMesh, VectorTileFetcher } from '../types';
-
-/** contour와 동일하게 벡터 데이터도 z=6 타일로만 제공된다. */
-const VECTOR_TILE_Z = 6;
 
 /**
  * useContourSurface의 벡터판. 색상 대신 노드별 (u, v)를 담은 VectorMesh를 만든다.
@@ -25,10 +23,16 @@ export function useVectorSurface(
   fetcher: VectorTileFetcher,
   enabled = true,
 ): VectorSurfaceResult {
-  const tiles = useTilesInView(VECTOR_TILE_Z, { enabled });
+  // 벡터 데이터도 location별 고정 z 타일로 제공된다(전국 6, 항구 11).
+  const tileZ = useLocationStore((s) => s.zoom);
+  const tiles = useTilesInView(tileZ, { enabled });
   const ctx = useFetcherCtx();
 
-  const { meshes, isLoaded: meshLoaded } = useDerivedMeshTiles(tiles, fetcher);
+  const { meshes, isLoaded: meshLoaded } = useDerivedMeshTiles(
+    tiles,
+    fetcher,
+    ctx,
+  );
   const { buffers: vectors, isLoaded: vectorsLoaded } = useValueBufferTiles(
     tiles,
     fetcher,

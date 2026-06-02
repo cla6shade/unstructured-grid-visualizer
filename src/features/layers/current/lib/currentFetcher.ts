@@ -1,7 +1,6 @@
 import { LAYER_VALUE_KEYS } from '@/lib/binaryTile';
 import type { VectorTileFetcher } from '@/features/vector/types';
 
-const LOCATION = 'korea';
 const LAYER = 'current';
 
 /**
@@ -10,12 +9,13 @@ const LAYER = 'current';
  */
 export const currentFetcher: VectorTileFetcher = {
   valueKeys: LAYER_VALUE_KEYS.surge.current,
-  meshUrl: ({ x, y }) => `/api/subset/mesh/${LOCATION}/${LAYER}/${x}/${y}`,
-  meshKey: ({ x, y }) => [LOCATION, 'mesh', LAYER, x, y],
-  valuesUrl: ({ x, y }, { typhoonId, scenarioId, timestamp }) =>
-    `/api/subset/${typhoonId}/${LOCATION}/${scenarioId}/${LAYER}/${timestamp}/${x}/${y}`,
-  valuesKey: ({ x, y }, { typhoonId, scenarioId, timestamp }) =>
-    [LOCATION, scenarioId, LAYER, typhoonId, timestamp, x, y],
+  meshUrl: ({ x, y }, { location }) =>
+    `/api/subset/mesh/${location}/${LAYER}/${x}/${y}`,
+  meshKey: ({ x, y }, { location }) => [location, 'mesh', LAYER, x, y],
+  valuesUrl: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
+    `/api/subset/${typhoonId}/${location}/${scenarioId}/${LAYER}/${timestamp}/${x}/${y}`,
+  valuesKey: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
+    [location, scenarioId, LAYER, typhoonId, timestamp, x, y],
   toVectors: (values) => {
     const u = values['U'];
     const v = values['V'];

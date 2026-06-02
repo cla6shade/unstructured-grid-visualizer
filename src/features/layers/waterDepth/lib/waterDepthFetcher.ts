@@ -12,7 +12,6 @@ import {
   MIN_DEPTH,
 } from '@/features/layers/waterDepth/constants/depthScale';
 
-const LOCATION = 'korea';
 const LAYER = 'height';
 
 // asinh 매핑(얕은 수심 강조)은 depthColorMap이 들고 있다.
@@ -20,12 +19,13 @@ const LUT = buildColorLut(depthColorMap, MIN_DEPTH, MAX_DEPTH, DEPTH_LUT_SIZE);
 
 export const waterDepthFetcher: ContourTileFetcher = {
   valueKeys: LAYER_VALUE_KEYS.surge.water_depth,
-  meshUrl: ({ x, y }) => `/api/subset/mesh/${LOCATION}/${LAYER}/${x}/${y}`,
-  meshKey: ({ x, y }) => [LOCATION, 'mesh', LAYER, x, y],
-  valuesUrl: ({ x, y }, { typhoonId, scenarioId, timestamp }) =>
-    `/api/subset/${typhoonId}/${LOCATION}/${scenarioId}/${LAYER}/${timestamp}/${x}/${y}`,
-  valuesKey: ({ x, y }, { typhoonId, scenarioId, timestamp }) =>
-    [LOCATION, scenarioId, LAYER, typhoonId, timestamp, x, y],
+  meshUrl: ({ x, y }, { location }) =>
+    `/api/subset/mesh/${location}/${LAYER}/${x}/${y}`,
+  meshKey: ({ x, y }, { location }) => [location, 'mesh', LAYER, x, y],
+  valuesUrl: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
+    `/api/subset/${typhoonId}/${location}/${scenarioId}/${LAYER}/${timestamp}/${x}/${y}`,
+  valuesKey: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
+    [location, scenarioId, LAYER, typhoonId, timestamp, x, y],
   toColors: (values) => {
     const s = values['H'];
     queueMicrotask(() =>

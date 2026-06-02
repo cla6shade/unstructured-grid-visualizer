@@ -3,12 +3,10 @@ import { useTilesInView } from '@/features/tiles/hooks/useTilesInView';
 import { useFetcherCtx } from '@/features/tiles/hooks/useFetcherCtx';
 import { useDerivedMeshTiles } from '@/features/tiles/hooks/useDerivedMeshTiles';
 import { useValueBufferTiles } from '@/features/tiles/hooks/useValueBufferTiles';
+import { useLocationStore } from '@/features/map/locationSelector/store/locationStore';
 import { EMPTY_SURFACE } from '../lib/emptySurface';
 import { mergeSurface, type DerivedTile } from '../lib/mergeSurface';
 import type { ContourTileFetcher, SurfaceMesh } from '../types';
-
-/** contour 데이터는 z=6 타일로만 제공된다. zoom ≥ 6에서 z=6 타일을 그대로 표시. */
-const CONTOUR_TILE_Z = 6;
 
 /**
  * viewport(zoom/bounds)와 scenario(typhoon/scenario/timestamp)에 따라
@@ -29,10 +27,17 @@ export function useContourSurface(
   fetcher: ContourTileFetcher,
   enabled = true,
 ): ContourSurfaceResult {
-  const tiles = useTilesInView(CONTOUR_TILE_Z, { enabled });
+  // contour 데이터는 location별 고정 z 타일로 제공된다(전국 6, 항구 11).
+  // 타일 z는 locationStore의 zoom을 그대로 사용한다.
+  const tileZ = useLocationStore((s) => s.zoom);
+  const tiles = useTilesInView(tileZ, { enabled });
   const ctx = useFetcherCtx();
 
-  const { meshes, isLoaded: meshLoaded } = useDerivedMeshTiles(tiles, fetcher);
+  const { meshes, isLoaded: meshLoaded } = useDerivedMeshTiles(
+    tiles,
+    fetcher,
+    ctx,
+  );
   const { buffers: colors, isLoaded: colorsLoaded } = useValueBufferTiles(
     tiles,
     fetcher,
