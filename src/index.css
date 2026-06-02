@@ -9,19 +9,44 @@
   --color-primary: #2b68d6;
   --color-primary-muted: #cbdeff;
 
-  /* Surfaces (배경) */
-  --color-background: #2c2e34;
-  --color-background-hover: #3a3c42;
-  --color-surface: #2c2e34cc;
-  --color-surface-light: #e1e5ed;
-  --color-surface-light-muted: #c5c9ce;
+  /* SVG palette */
+  --color-map-canvas: #000012;
+  --color-map-surface-deep: #212226;
+  --color-map-surface: #2c2e34;
+  --color-map-surface-raised: #595b5f;
+  --color-map-control: #e1e5ed;
+  --color-map-control-muted: #c5c9ce;
+  --color-map-control-disabled: #979a9d;
+  --color-map-content: #ffffff;
+  --color-map-content-strong: #e7eaef;
+  --color-map-content-muted: #acb0bb;
+  --color-map-content-subtle: #a5a8ac;
+  --color-map-icon: #7d8089;
+  --color-map-icon-muted: #7b7f84;
+  --color-map-icon-subtle: #797e86;
+  --color-map-panel: #2c2e34cc;
 
-  /* Foreground (텍스트/콘텐츠) */
-  --color-foreground: #ffffff;
-  --color-foreground-muted: #e7eaef;
-  --color-foreground-active: #595b5f;
+  /* Surfaces */
+  --color-background: var(--color-map-surface);
+  --color-background-hover: #3a3c42;
+  --color-surface: var(--color-map-panel);
+  --color-surface-light: var(--color-map-control);
+  --color-surface-light-muted: var(--color-map-control-muted);
+
+  /* Foreground */
+  --color-foreground: var(--color-map-content);
+  --color-foreground-muted: var(--color-map-content-strong);
+  --color-foreground-active: var(--color-map-surface-raised);
 
   /* Shadows */
   --shadow-sm: 0px 0px 6px rgba(88, 89, 95, 0.24);
   --shadow-md: 0px 0px 12px rgba(88, 89, 95, 0.32);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    background-color: var(--color-map-canvas);
+  }
 }
