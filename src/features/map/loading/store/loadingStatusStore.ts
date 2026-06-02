@@ -1,8 +1,9 @@
 import { createStore } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type {
-  LoadingStatusStore,
-  LoadingStatusStoreInstance,
+import {
+  loadViewKey,
+  type LoadingStatusStore,
+  type LoadingStatusStoreInstance,
 } from '@/features/map/loading/types';
 
 export function createLoadingStatusStore(): LoadingStatusStoreInstance {
@@ -10,18 +11,19 @@ export function createLoadingStatusStore(): LoadingStatusStoreInstance {
     devtools(
       (set, get) => ({
         loaded: {},
-        markIsInitialLoaded: (layerId, ts) => {
+        markIsInitialLoaded: (layerId, location, ts) => {
+          const key = loadViewKey(location, ts);
           // 멱등: 이미 완료면 아무 것도 하지 않는다.
-          if (get().loaded[ts]?.[layerId]) return;
+          if (get().loaded[key]?.[layerId]) return;
           // 렌더 단계에서 호출되므로 set은 microtask로 미뤄
           // "Cannot update a component while rendering a different component" 회피.
           queueMicrotask(() => {
-            if (get().loaded[ts]?.[layerId]) return;
+            if (get().loaded[key]?.[layerId]) return;
             set(
               (s) => ({
                 loaded: {
                   ...s.loaded,
-                  [ts]: { ...s.loaded[ts], [layerId]: true },
+                  [key]: { ...s.loaded[key], [layerId]: true },
                 },
               }),
               undefined,
