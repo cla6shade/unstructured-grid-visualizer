@@ -19,25 +19,40 @@ const CONTOUR_TILE_Z = 6;
  *
  * mergeSurface는 캐시된 typed array들을 concat·remap만 수행.
  */
+export interface ContourSurfaceResult {
+  surface: SurfaceMesh;
+  /** 현재 뷰포트의 모든 타일(mesh+colors)이 도착했는지. 빈 타일셋이면 false. */
+  isLoaded: boolean;
+}
+
 export function useContourSurface(
   fetcher: ContourTileFetcher,
   enabled = true,
-): SurfaceMesh {
+): ContourSurfaceResult {
   const tiles = useTilesInView(CONTOUR_TILE_Z, { enabled });
   const ctx = useFetcherCtx();
 
-  const derived = useDerivedMeshTiles(tiles, fetcher);
-  const colors = useValueBufferTiles(tiles, fetcher, ctx, fetcher.toColors, 'colors');
+  const { meshes, isLoaded: meshLoaded } = useDerivedMeshTiles(tiles, fetcher);
+  const { buffers: colors, isLoaded: colorsLoaded } = useValueBufferTiles(
+    tiles,
+    fetcher,
+    ctx,
+    fetcher.toColors,
+    'colors',
+  );
+  const isLoaded = meshLoaded && colorsLoaded;
 
-  return useMemo(() => {
+  const surface = useMemo(() => {
     const pairs: DerivedTile[] = [];
     for (let i = 0; i < tiles.length; i++) {
-      const m = derived[i];
+      const m = meshes[i];
       const c = colors[i];
       if (!m || !c) continue;
       pairs.push({ mesh: m, colors: c });
     }
     if (pairs.length === 0) return EMPTY_SURFACE;
     return mergeSurface(pairs);
-  }, [tiles, derived, colors]);
+  }, [tiles, meshes, colors]);
+
+  return { surface, isLoaded };
 }

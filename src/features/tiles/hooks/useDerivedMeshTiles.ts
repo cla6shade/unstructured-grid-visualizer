@@ -16,10 +16,16 @@ type MeshSource = Pick<TileSource, 'meshUrl' | 'meshKey'>;
  * 내부 mesh fetch는 queryClient.fetchQuery로 위임 — 동일 meshKey의 raw 캐시는
  * contour/vector가 공유한다.
  */
+export interface DerivedMeshTiles {
+  meshes: readonly (DerivedMesh | undefined)[];
+  /** 보이는 모든 mesh 타일 쿼리가 settle 됐는지(빈 타일 포함). 단일 출처: react-query status. */
+  isLoaded: boolean;
+}
+
 export function useDerivedMeshTiles(
   tiles: TileCoord[],
   source: MeshSource,
-): readonly (DerivedMesh | undefined)[] {
+): DerivedMeshTiles {
   const qc = useQueryClient();
   const results = useQueries({
     queries: tiles.map((coord) => {
@@ -45,9 +51,13 @@ export function useDerivedMeshTiles(
     .map((r, i) => `${tiles[i].x},${tiles[i].y}:${r.dataUpdatedAt ?? 0}`)
     .join('|');
 
-  return useMemo<readonly (DerivedMesh | undefined)[]>(
+  const meshes = useMemo<readonly (DerivedMesh | undefined)[]>(
     () => results.map((r) => r.data ?? undefined),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fingerprint],
   );
+
+  const isLoaded = tiles.length > 0 && results.every((r) => !r.isPending);
+
+  return { meshes, isLoaded };
 }

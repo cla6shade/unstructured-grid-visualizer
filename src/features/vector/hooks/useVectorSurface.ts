@@ -15,25 +15,40 @@ const VECTOR_TILE_Z = 6;
  * mesh 파생물(positions/conn)은 useDerivedMeshTiles로 contour와 캐시를 공유하고,
  * (u, v)는 useValueBufferTiles로 별도 캐싱된다. indices를 유지하므로 barycentric 보간에 그대로 쓸 수 있다.
  */
+export interface VectorSurfaceResult {
+  mesh: VectorMesh;
+  /** 현재 뷰포트의 모든 타일(mesh+vectors)이 도착했는지. 빈 타일셋이면 false. */
+  isLoaded: boolean;
+}
+
 export function useVectorSurface(
   fetcher: VectorTileFetcher,
   enabled = true,
-): VectorMesh {
+): VectorSurfaceResult {
   const tiles = useTilesInView(VECTOR_TILE_Z, { enabled });
   const ctx = useFetcherCtx();
 
-  const derived = useDerivedMeshTiles(tiles, fetcher);
-  const vectors = useValueBufferTiles(tiles, fetcher, ctx, fetcher.toVectors, 'vectors');
+  const { meshes, isLoaded: meshLoaded } = useDerivedMeshTiles(tiles, fetcher);
+  const { buffers: vectors, isLoaded: vectorsLoaded } = useValueBufferTiles(
+    tiles,
+    fetcher,
+    ctx,
+    fetcher.toVectors,
+    'vectors',
+  );
+  const isLoaded = meshLoaded && vectorsLoaded;
 
-  return useMemo(() => {
+  const mesh = useMemo(() => {
     const pairs: DerivedVectorTile[] = [];
     for (let i = 0; i < tiles.length; i++) {
-      const m = derived[i];
+      const m = meshes[i];
       const v = vectors[i];
       if (!m || !v) continue;
       pairs.push({ mesh: m, vectors: v });
     }
     if (pairs.length === 0) return EMPTY_VECTOR_MESH;
     return mergeVectorSurface(pairs);
-  }, [tiles, derived, vectors]);
+  }, [tiles, meshes, vectors]);
+
+  return { mesh, isLoaded };
 }

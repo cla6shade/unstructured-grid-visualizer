@@ -4,11 +4,13 @@ import { useRegisterLayerGroup } from '@/features/map/deck/hooks/useRegisterLaye
 import { useLayerStore } from '@/features/map/layerSelector/store/layerStore';
 import { useContourSurface } from '@/features/contour/hooks/useContourSurface';
 import { createContourLayer } from '@/features/contour/lib/createContourLayer';
+import { useReportInitialLoad } from '@/features/map/loading/hooks/useReportInitialLoad';
 import type { ContourLayerSpec, LayerId } from '../registry';
 
 export function ContourLayer({ spec }: { spec: ContourLayerSpec }) {
   const visible = useLayerStore((s) => s.layers[spec.id as LayerId]);
-  const surface = useContourSurface(spec.fetcher, visible);
+  const { surface, isLoaded } = useContourSurface(spec.fetcher, visible);
+  useReportInitialLoad(spec.id as LayerId, visible && isLoaded);
 
   const layers = useMemo<DeckLayer[]>(
     () => [

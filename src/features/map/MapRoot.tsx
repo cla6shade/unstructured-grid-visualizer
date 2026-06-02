@@ -14,6 +14,12 @@ import { LayerSelector } from '@/features/map/layerSelector/components/LayerSele
 import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
 import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
+import { LoadingStatusProvider } from '@/features/map/loading/components/LoadingStatusProvider';
+import {
+  InitialLoadingScreen,
+  CATALOG_ROW,
+} from '@/features/map/loading/components/InitialLoadingScreen';
+import { LoadingOverlay } from '@/features/map/loading/components/LoadingOverlay';
 import { MapLayers } from '@/features/layers/core/components/MapLayers';
 import {
   INITIAL_CENTER,
@@ -29,13 +35,19 @@ export function MapRoot() {
 
   return (
     <ViewportProvider initialState={INITIAL_VIEWPORT}>
-      <Suspense fallback={null}>
-        <ScenarioProvider catalogPromise={catalogPromise}>
-          <BasemapProvider>
-            <MapView />
-          </BasemapProvider>
-        </ScenarioProvider>
-      </Suspense>
+      <LoadingStatusProvider>
+        <Suspense
+          fallback={
+            <InitialLoadingScreen rows={[{ ...CATALOG_ROW, loaded: false }]} />
+          }
+        >
+          <ScenarioProvider catalogPromise={catalogPromise}>
+            <BasemapProvider>
+              <MapView />
+            </BasemapProvider>
+          </ScenarioProvider>
+        </Suspense>
+      </LoadingStatusProvider>
     </ViewportProvider>
   );
 }
@@ -71,6 +83,7 @@ function MapView() {
       <BasemapSelector />
       <LayerSelector />
       <ScenarioTimeSelector />
+      <LoadingOverlay />
       <div className="absolute bottom-[16px] right-10 z-[1000] flex flex-col items-end gap-2">
         <DebugStatsOverlay />
         <LayerColorBars />

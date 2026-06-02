@@ -7,11 +7,13 @@ import {
   type FlowSegments,
 } from '@/features/vector/hooks/useFlowLines';
 import { createFlowLayer } from '@/features/vector/lib/createFlowLayer';
+import { useReportInitialLoad } from '@/features/map/loading/hooks/useReportInitialLoad';
 import type { FlowLayerSpec, LayerId } from '../registry';
 
 export function FlowLayer({ spec }: { spec: FlowLayerSpec }) {
   const visible = useLayerStore((s) => s.layers[spec.id as LayerId]);
-  const mesh = useVectorSurface(spec.fetcher, visible);
+  const { mesh, isLoaded } = useVectorSurface(spec.fetcher, visible);
+  useReportInitialLoad(spec.id as LayerId, visible && isLoaded);
   const registry = useDeckLayersRegistry();
 
   const onSegments = useCallback(
