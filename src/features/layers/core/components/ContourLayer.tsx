@@ -9,18 +9,17 @@ import type { ContourLayerSpec, LayerId } from '../registry';
 
 export function ContourLayer({ spec }: { spec: ContourLayerSpec }) {
   const visible = useLayerStore((s) => s.layers[spec.id as LayerId]);
-  const { surface, isLoaded } = useContourSurface(spec.fetcher, visible);
+  const { base, detail, isLoaded } = useContourSurface(spec.fetcher, visible);
   useReportInitialLoad(spec.id as LayerId, visible && isLoaded);
 
+  // 전국(z=6) 베이스 + 항구(z=11) 디테일을 별도 deck 레이어로 등록한다.
+  // 디테일이 EMPTY면 ContourSurface가 모델을 만들지 않아 무해(전국 뷰).
   const layers = useMemo<DeckLayer[]>(
     () => [
-      createContourLayer({
-        id: spec.layerName,
-        surface,
-        visible,
-      }),
+      createContourLayer({ id: `${spec.layerName}-base`, surface: base, visible }),
+      createContourLayer({ id: `${spec.layerName}-detail`, surface: detail, visible }),
     ],
-    [spec.layerName, surface, visible],
+    [spec.layerName, base, detail, visible],
   );
 
   useRegisterLayerGroup(spec.layerName, layers, spec.zIndex);

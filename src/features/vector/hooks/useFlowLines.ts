@@ -117,7 +117,12 @@ export function useFlowLines(
   // mesh 변경 시 속도장만 교체 (파티클은 유지).
   useEffect(() => {
     fieldRef.current = createVelocityField(mesh);
-    if (!fieldRef.current && simRef.current) simRef.current.seeded = false;
+    if (!fieldRef.current) {
+      // mesh가 비면(예: 항구→전국 전환으로 디테일 슬롯이 EMPTY) 속도장이 없어
+      // 더 이상 세그먼트를 못 만든다. 등록된 그룹에 남은 잔상이 안 보이도록 비운다.
+      if (simRef.current) simRef.current.seeded = false;
+      cbRef.current(null);
+    }
   }, [mesh]);
 
   useEffect(() => {

@@ -4,22 +4,32 @@ import { useFetcherCtx } from '@/features/tiles/hooks/useFetcherCtx';
 import { useDerivedMeshTiles } from '@/features/tiles/hooks/useDerivedMeshTiles';
 import { useValueBufferTiles } from '@/features/tiles/hooks/useValueBufferTiles';
 import { useLocationStore } from '@/features/map/locationSelector/store/locationStore';
+import { portDetailTiles } from '@/features/map/locationSelector/constants/portTiles';
+import {
+  KOREA_LOCATION,
+  KOREA_LOCATION_ID,
+  KOREA_ZOOM,
+} from '@/features/map/locationSelector/constants/locations';
+import { tileLngLatBounds, type LngLatRect } from '@/lib/tile';
 import { EMPTY_SURFACE } from '../lib/emptySurface';
 import { mergeSurface, type DerivedTile } from '../lib/mergeSurface';
 import type { ContourTileFetcher, SurfaceMesh } from '../types';
 
 /**
- * viewport(zoom/bounds)와 scenario(typhoon/scenario/timestamp)에 따라
- * contour 표면 메시를 받아온다. 타일별 파생물(mesh positions+conn, colors)은
- * react-query 캐시에 분리 저장되어:
- * - timestamp 변경 시 connectivity·positions는 재사용, 새 colors만 계산
- * - pan으로 tile-set만 바뀔 때 변하지 않은 타일의 파생물은 그대로 재사용
+ * contour 표면을 **두 해상도 슬롯**으로 받아온다:
+ * - base: 전국(z=6) — viewport 기반, 항상. 항구 선택 시 z=11 디테일이 덮는 영역은 구멍이 뚫린다.
+ * - detail: 항구(z=11) — `tiles_by_port.json` 고정 타일 목록(viewport 무관), 항구일 때만.
  *
- * mergeSurface는 캐시된 typed array들을 concat·remap만 수행.
+ * base/detail은 globalNodes 충돌을 피해 **각각 따로** merge한다. 디테일이 베이스의 구멍에
+ * 정확히 들어가 두 레이어가 겹치지 않으므로 반투명 색 중첩/z-fighting이 없다.
+ * 타일별 파생물(mesh positions+conn, colors)은 react-query 캐시에 분리 저장되어 재사용된다.
  */
 export interface ContourSurfaceResult {
-  surface: SurfaceMesh;
-  /** 현재 뷰포트의 모든 타일(mesh+colors)이 도착했는지. 빈 타일셋이면 false. */
+  /** 전국(z=6) 베이스. 항구면 디테일 영역이 도려내진다. */
+  base: SurfaceMesh;
+  /** 항구(z=11) 디테일. 전국 뷰에서는 EMPTY_SURFACE. */
+  detail: SurfaceMesh;
+  /** 베이스 + (항구면) 디테일 타일이 모두 도착했는지. */
   isLoaded: boolean;
 }
 
@@ -27,37 +37,75 @@ export function useContourSurface(
   fetcher: ContourTileFetcher,
   enabled = true,
 ): ContourSurfaceResult {
-  // contour 데이터는 location별 고정 z 타일로 제공된다(전국 6, 항구 11).
-  // 타일 z는 locationStore의 zoom을 그대로 사용한다.
-  const tileZ = useLocationStore((s) => s.zoom);
-  const tiles = useTilesInView(tileZ, { enabled });
-  const ctx = useFetcherCtx();
+  const location = useLocationStore((s) => s.location);
+  const isPort = location.id !== KOREA_LOCATION_ID;
 
-  const { meshes, isLoaded: meshLoaded } = useDerivedMeshTiles(
-    tiles,
+  // 베이스: 전국 z=6, viewport 기반. 항상 활성.
+  const baseCtx = useFetcherCtx(KOREA_LOCATION.urlKey);
+  const baseTiles = useTilesInView(KOREA_ZOOM, { enabled });
+  const { meshes: baseMeshes, isLoaded: baseMeshLoaded } = useDerivedMeshTiles(
+    baseTiles,
     fetcher,
-    ctx,
+    baseCtx,
   );
-  const { buffers: colors, isLoaded: colorsLoaded } = useValueBufferTiles(
-    tiles,
-    fetcher,
-    ctx,
-    fetcher.toColors,
-    'colors',
-  );
-  const isLoaded = meshLoaded && colorsLoaded;
+  const { buffers: baseColors, isLoaded: baseColorsLoaded } =
+    useValueBufferTiles(baseTiles, fetcher, baseCtx, fetcher.toColors, 'colors');
 
-  const surface = useMemo(() => {
+  // 디테일: 항구 z=11. 타일은 매니페스트 고정 목록(viewport 무관).
+  const detailCtx = useFetcherCtx(location.urlKey);
+  const detailTiles = useMemo(
+    () => (enabled && isPort ? portDetailTiles(location.urlKey) : []),
+    [enabled, isPort, location.urlKey],
+  );
+  const { meshes: detailMeshes, isLoaded: detailMeshLoaded } =
+    useDerivedMeshTiles(detailTiles, fetcher, detailCtx);
+  const { buffers: detailColors, isLoaded: detailColorsLoaded } =
+    useValueBufferTiles(
+      detailTiles,
+      fetcher,
+      detailCtx,
+      fetcher.toColors,
+      'colors',
+    );
+
+  // 로드된 z=11 디테일 타일의 lng/lat 사각형 = 베이스에서 도려낼 영역.
+  const holes = useMemo<LngLatRect[]>(() => {
+    if (!isPort) return [];
+    const rects: LngLatRect[] = [];
+    for (let i = 0; i < detailTiles.length; i++) {
+      if (detailMeshes[i] && detailColors[i]) {
+        rects.push(tileLngLatBounds(detailTiles[i]));
+      }
+    }
+    return rects;
+  }, [isPort, detailTiles, detailMeshes, detailColors]);
+
+  const base = useMemo(() => {
     const pairs: DerivedTile[] = [];
-    for (let i = 0; i < tiles.length; i++) {
-      const m = meshes[i];
-      const c = colors[i];
+    for (let i = 0; i < baseTiles.length; i++) {
+      const m = baseMeshes[i];
+      const c = baseColors[i];
+      if (!m || !c) continue;
+      pairs.push({ mesh: m, colors: c });
+    }
+    if (pairs.length === 0) return EMPTY_SURFACE;
+    return mergeSurface(pairs, holes);
+  }, [baseTiles, baseMeshes, baseColors, holes]);
+
+  const detail = useMemo(() => {
+    const pairs: DerivedTile[] = [];
+    for (let i = 0; i < detailTiles.length; i++) {
+      const m = detailMeshes[i];
+      const c = detailColors[i];
       if (!m || !c) continue;
       pairs.push({ mesh: m, colors: c });
     }
     if (pairs.length === 0) return EMPTY_SURFACE;
     return mergeSurface(pairs);
-  }, [tiles, meshes, colors]);
+  }, [detailTiles, detailMeshes, detailColors]);
 
-  return { surface, isLoaded };
+  const detailReady = !isPort || (detailMeshLoaded && detailColorsLoaded);
+  const isLoaded = baseMeshLoaded && baseColorsLoaded && detailReady;
+
+  return { base, detail, isLoaded };
 }
