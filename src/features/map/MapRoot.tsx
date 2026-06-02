@@ -12,7 +12,9 @@ import { ScenarioProvider } from '@/features/map/scenario/components/ScenarioPro
 import { ScenarioTimeSelector } from '@/features/map/scenario/components/ScenarioTimeSelector';
 import { LayerSelector } from '@/features/map/layerSelector/components/LayerSelector';
 import { LocationSelector } from '@/features/map/locationSelector/components/LocationSelector';
-import { useLocationNavigation } from '@/features/map/locationSelector/hooks/useLocationNavigation';
+import { LocationPinLayer } from '@/features/map/locationSelector/components/LocationPinLayer';
+import { useFlyToLocation } from '@/features/map/locationSelector/hooks/useFlyToLocation';
+import { useSyncLocationFromViewport } from '@/features/map/locationSelector/hooks/useSyncLocationFromViewport';
 import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
 import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
@@ -58,7 +60,9 @@ function MapView() {
   const mapRef = useRef<MapRef | null>(null);
   const basemap = useBasemap((s) => s.basemap);
   const syncView = useSyncView(mapRef);
-  useLocationNavigation(mapRef);
+  const goToLocation = useFlyToLocation(mapRef);
+  // 뷰포트(팬/줌·클릭 jumpTo) → 현재 location 파생.
+  useSyncLocationFromViewport();
 
   return (
     <div className="w-dvw h-dvh absolute top-0 left-0">
@@ -82,9 +86,10 @@ function MapView() {
         <DeckOverlayProvider>
           <MapLayers />
         </DeckOverlayProvider>
+        <LocationPinLayer onSelect={goToLocation} />
       </Map>
       <BasemapSelector />
-      <LocationSelector />
+      <LocationSelector onSelect={goToLocation} />
       <LayerSelector />
       <ScenarioTimeSelector />
       <LoadingOverlay />
