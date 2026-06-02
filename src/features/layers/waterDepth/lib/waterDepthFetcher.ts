@@ -6,11 +6,17 @@ import {
 } from '@/lib/colorMap';
 import { useDebugStatsStore } from '@/features/map/debug/store/debugStatsStore';
 import type { ContourTileFetcher } from '@/features/contour/types';
+import {
+  DEPTH_LUT_SIZE,
+  MAX_DEPTH,
+  MIN_DEPTH,
+} from '@/features/layers/waterDepth/constants/depthScale';
 
 const LOCATION = 'korea';
 const LAYER = 'height';
-// TODO: 색상 정규화 범위는 실 데이터로 튜닝 필요.
-const LUT = buildColorLut(depthColorMap, 0, 10_000);
+
+// asinh 매핑(얕은 수심 강조)은 depthColorMap이 들고 있다.
+const LUT = buildColorLut(depthColorMap, MIN_DEPTH, MAX_DEPTH, DEPTH_LUT_SIZE);
 
 export const waterDepthFetcher: ContourTileFetcher = {
   valueKeys: LAYER_VALUE_KEYS.surge.water_depth,

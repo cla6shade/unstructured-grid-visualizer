@@ -12,6 +12,7 @@ import { ScenarioProvider } from '@/features/map/scenario/components/ScenarioPro
 import { ScenarioTimeSelector } from '@/features/map/scenario/components/ScenarioTimeSelector';
 import { LayerSelector } from '@/features/map/layerSelector/components/LayerSelector';
 import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
+import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { MapLayers } from '@/features/layers/core/components/MapLayers';
 import {
@@ -70,7 +71,10 @@ function MapView() {
       <BasemapSelector />
       <LayerSelector />
       <ScenarioTimeSelector />
-      <DebugStatsOverlay />
+      <div className="absolute bottom-[16px] right-10 z-[1000] flex flex-col items-end gap-2">
+        <DebugStatsOverlay />
+        <LayerColorBars />
+      </div>
     </div>
   );
 }
