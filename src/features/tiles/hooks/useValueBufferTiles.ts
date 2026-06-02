@@ -56,7 +56,6 @@ export function useValueBufferTiles(
 
   const buffers = useMemo<readonly (Float32Array | undefined)[]>(
     () => results.map((r) => r.data ?? undefined),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fingerprint],
   );
 

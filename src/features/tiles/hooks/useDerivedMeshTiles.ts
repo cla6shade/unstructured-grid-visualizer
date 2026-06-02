@@ -54,7 +54,6 @@ export function useDerivedMeshTiles(
 
   const meshes = useMemo<readonly (DerivedMesh | undefined)[]>(
     () => results.map((r) => r.data ?? undefined),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fingerprint],
   );
 
