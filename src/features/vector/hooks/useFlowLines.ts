@@ -75,7 +75,7 @@ function makeSim(particleCount: number, trailLength: number): Sim {
   };
 }
 
-/** 파티클 i를 mesh 내부 임의 지점에 재배치하고 trail을 한 점으로 접는다. */
+/** 파티클 i를 실제 삼각형 내부(=자료가 있는 곳) 임의 지점에 재배치하고 trail을 한 점으로 접는다. */
 function respawn(
   sim: Sim,
   field: VelocityField,
@@ -84,14 +84,10 @@ function respawn(
   minAge: number,
   ageJitter: number,
 ): void {
-  const probe: [number, number] = [0, 0];
-  let lon = 0;
-  let lat = 0;
-  for (let attempt = 0; attempt < 8; attempt++) {
-    lon = field.minLon + Math.random() * (field.maxLon - field.minLon);
-    lat = field.minLat + Math.random() * (field.maxLat - field.minLat);
-    if (field.sample(lon, lat, probe)) break;
-  }
+  const seed: [number, number] = [0, 0];
+  field.randomPointInMesh(seed);
+  const lon = seed[0];
+  const lat = seed[1];
   sim.px[i] = lon;
   sim.py[i] = lat;
   sim.age[i] = 0;

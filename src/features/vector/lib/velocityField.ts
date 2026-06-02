@@ -12,6 +12,11 @@ export interface VelocityField {
   readonly maxLat: number;
   /** (lon, lat)가 mesh 내부면 out=[u, v]를 채우고 true, 아니면 false. */
   sample(lon: number, lat: number, out: [number, number]): boolean;
+  /**
+   * 실제 삼각형 내부의 임의 지점(lon, lat)을 out에 채운다(면적 가중 → 공간 균일).
+   * bbox 무작위와 달리 자료가 있는 곳에서만 spawn되도록 보장한다.
+   */
+  randomPointInMesh(out: [number, number]): void;
 }
 
 const GRID_N = 64;
@@ -68,6 +73,55 @@ export function createVelocityField(mesh: VectorMesh): VelocityField | null {
     }
   }
 
+  // 삼각형 면적의 누적합(면적 가중 추출용). 마지막 원소가 전체 면적.
+  const cumArea = new Float64Array(triCount);
+  let areaAcc = 0;
+  for (let t = 0; t < triCount; t++) {
+    const a = indices[t * 3];
+    const b = indices[t * 3 + 1];
+    const c = indices[t * 3 + 2];
+    const ax = positions[a * 3];
+    const ay = positions[a * 3 + 1];
+    const bx = positions[b * 3];
+    const by = positions[b * 3 + 1];
+    const cx = positions[c * 3];
+    const cy = positions[c * 3 + 1];
+    areaAcc += Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) * 0.5;
+    cumArea[t] = areaAcc;
+  }
+  const totalArea = areaAcc;
+
+  const randomPointInMesh = (out: [number, number]): void => {
+    // 면적 가중으로 삼각형 하나를 고른다(누적합 이분 탐색).
+    const target = Math.random() * totalArea;
+    let lo = 0;
+    let hi = triCount - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (cumArea[mid] < target) lo = mid + 1;
+      else hi = mid;
+    }
+    const t = lo;
+    const a = indices[t * 3];
+    const b = indices[t * 3 + 1];
+    const c = indices[t * 3 + 2];
+    const ax = positions[a * 3];
+    const ay = positions[a * 3 + 1];
+    const bx = positions[b * 3];
+    const by = positions[b * 3 + 1];
+    const cx = positions[c * 3];
+    const cy = positions[c * 3 + 1];
+    // 삼각형 내부 균일 추출: r1+r2>1이면 반사해 평행사변형을 삼각형으로 접는다.
+    let r1 = Math.random();
+    let r2 = Math.random();
+    if (r1 + r2 > 1) {
+      r1 = 1 - r1;
+      r2 = 1 - r2;
+    }
+    out[0] = ax + r1 * (bx - ax) + r2 * (cx - ax);
+    out[1] = ay + r1 * (by - ay) + r2 * (cy - ay);
+  };
+
   const sample = (lon: number, lat: number, out: [number, number]): boolean => {
     if (lon < minLon || lon > maxLon || lat < minLat || lat > maxLat) {
       return false;
@@ -102,7 +156,7 @@ export function createVelocityField(mesh: VectorMesh): VelocityField | null {
     return false;
   };
 
-  return { minLon, minLat, maxLon, maxLat, sample };
+  return { minLon, minLat, maxLon, maxLat, sample, randomPointInMesh };
 }
 
 function clampInt(v: number, lo: number, hi: number): number {
