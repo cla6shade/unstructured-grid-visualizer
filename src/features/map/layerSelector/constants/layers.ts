@@ -1,13 +1,5 @@
-export const LAYER_IDS = ['freeSurface', 'waterDepth'] as const;
-export type LayerId = (typeof LAYER_IDS)[number];
-
-export interface LayerDef {
-  id: LayerId;
-  label: string;
-  defaultVisible: boolean;
-}
-
-export const LAYER_DEFS: LayerDef[] = [
-  { id: 'freeSurface', label: '자유수면', defaultVisible: true },
-  { id: 'waterDepth', label: '수심', defaultVisible: true },
-];
+export {
+  LAYER_DEFS,
+  type LayerDef,
+  type LayerId,
+} from '@/features/layers/core/registry';

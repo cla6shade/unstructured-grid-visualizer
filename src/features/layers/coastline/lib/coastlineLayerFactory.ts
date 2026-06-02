@@ -1,6 +1,5 @@
 import { GeoJsonLayer } from '@deck.gl/layers';
 import type { Layer } from '@deck.gl/core';
-import { COASTLINE_MASK_ID } from '../constants';
 
 /**
  * coastline GeoJSON으로 deck.gl 마스크 레이어를 만든다.
@@ -8,9 +7,10 @@ import { COASTLINE_MASK_ID } from '../constants';
  */
 export function buildCoastlineMaskLayer(
   data: GeoJSON.FeatureCollection,
+  id: string,
 ): Layer {
   return new GeoJsonLayer({
-    id: COASTLINE_MASK_ID,
+    id,
     data,
     operation: 'mask',
     filled: true,

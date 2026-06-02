@@ -10,7 +10,7 @@ export function DebugStatsOverlay() {
   const entries = Object.entries(stats);
 
   return (
-    <div className="absolute top-10 left-10 z-[1000] flex flex-col gap-1 bg-[rgba(44,46,52,0.85)] rounded-[8px] px-3 py-2 text-[12px] text-[#e7eaef] font-mono select-none pointer-events-none">
+    <div className="flex flex-col gap-1 bg-[rgba(44,46,52,0.85)] rounded-[8px] px-3 py-2 text-[12px] text-[#e7eaef] font-mono select-none pointer-events-none">
       <div className="text-[#bcbfc5] mb-1">값 범위 (디버그)</div>
       {entries.length === 0 && <div className="text-[#7b7f84]">데이터 없음</div>}
       {entries.map(([layerId, s]) => (

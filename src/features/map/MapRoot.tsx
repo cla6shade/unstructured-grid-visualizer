@@ -11,11 +11,22 @@ import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayP
 import { ScenarioProvider } from '@/features/map/scenario/components/ScenarioProvider';
 import { ScenarioTimeSelector } from '@/features/map/scenario/components/ScenarioTimeSelector';
 import { LayerSelector } from '@/features/map/layerSelector/components/LayerSelector';
+import { LocationSelector } from '@/features/map/locationSelector/components/LocationSelector';
+import { LocationPinLayer } from '@/features/map/locationSelector/components/LocationPinLayer';
+import { useFlyToLocation } from '@/features/map/locationSelector/hooks/useFlyToLocation';
+import { useSyncLocationFromViewport } from '@/features/map/locationSelector/hooks/useSyncLocationFromViewport';
 import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
+import { ViewportStatsOverlay } from '@/features/map/debug/components/ViewportStatsOverlay';
+import { DensityControl } from '@/features/map/density/components/DensityControl';
+import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
-import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
-import { FreeSurfaceLayer } from '@/features/layers/freeSurface/components/FreeSurfaceLayer';
-import { WaterDepthLayer } from '@/features/layers/waterDepth/components/WaterDepthLayer';
+import { LoadingStatusProvider } from '@/features/map/loading/components/LoadingStatusProvider';
+import {
+  InitialLoadingScreen,
+  CATALOG_ROW,
+} from '@/features/map/loading/components/InitialLoadingScreen';
+import { LoadingOverlay } from '@/features/map/loading/components/LoadingOverlay';
+import { MapLayers } from '@/features/layers/core/components/MapLayers';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,
@@ -30,13 +41,19 @@ export function MapRoot() {
 
   return (
     <ViewportProvider initialState={INITIAL_VIEWPORT}>
-      <Suspense fallback={null}>
-        <ScenarioProvider catalogPromise={catalogPromise}>
-          <BasemapProvider>
-            <MapView />
-          </BasemapProvider>
-        </ScenarioProvider>
-      </Suspense>
+      <LoadingStatusProvider>
+        <Suspense
+          fallback={
+            <InitialLoadingScreen rows={[{ ...CATALOG_ROW, loaded: false }]} />
+          }
+        >
+          <ScenarioProvider catalogPromise={catalogPromise}>
+            <BasemapProvider>
+              <MapView />
+            </BasemapProvider>
+          </ScenarioProvider>
+        </Suspense>
+      </LoadingStatusProvider>
     </ViewportProvider>
   );
 }
@@ -45,6 +62,9 @@ function MapView() {
   const mapRef = useRef<MapRef | null>(null);
   const basemap = useBasemap((s) => s.basemap);
   const syncView = useSyncView(mapRef);
+  const goToLocation = useFlyToLocation(mapRef);
+  // 뷰포트(팬/줌·클릭 jumpTo) → 현재 location 파생.
+  useSyncLocationFromViewport();
 
   return (
     <div className="w-dvw h-dvh absolute top-0 left-0">
@@ -66,15 +86,21 @@ function MapView() {
         style={{ width: '100%', height: '100%' }}
       >
         <DeckOverlayProvider>
-          <CoastlineLayer />
-          <FreeSurfaceLayer />
-          <WaterDepthLayer />
+          <MapLayers />
         </DeckOverlayProvider>
+        <LocationPinLayer onSelect={goToLocation} />
       </Map>
       <BasemapSelector />
+      <LocationSelector onSelect={goToLocation} />
       <LayerSelector />
       <ScenarioTimeSelector />
-      <DebugStatsOverlay />
+      <LoadingOverlay />
+      <div className="absolute bottom-[16px] right-10 z-[1000] flex flex-col items-end gap-2">
+        <DebugStatsOverlay />
+        <ViewportStatsOverlay />
+        <DensityControl />
+        <LayerColorBars />
+      </div>
     </div>
   );
 }

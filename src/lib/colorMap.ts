@@ -92,10 +92,31 @@ function lerp(a: number, b: number, t: number): number {
 
 // --- public API ---
 
-export function createColorMap(colors: string[], alpha = 200) {
+// 값을 색상 램프 위 0..1 위치로 보내는 매핑 방식.
+// - linear: 값에 비례한 균등 매핑.
+// - asinh: asinh로 압축해 낮은 값 구간을 색상 램프 위에 더 넓게(=조밀한 색
+//   변화로) 펼친다. `scale`이 작을수록 낮은 값 쪽 해상도가 커진다(얕은 수심 강조).
+export type ColorScale =
+  | { type: 'linear' }
+  | { type: 'asinh'; scale: number };
+
+export const LINEAR_SCALE: ColorScale = { type: 'linear' };
+
+// 컬러맵은 "색 램프 + 값→위치 매핑(scale)"을 함께 갖는다. 호출 시그니처는
+// 균등 램프 보간이고(콜러바 그라데이션·LUT 샘플링이 그대로 쓴다), 비선형
+// 매핑은 `scale` 메타로 들고 다니다가 buildColorLut/valuesToRgbaFloat32가 읽는다.
+export interface ColorMap {
+  (value: number, min: number, max: number): RGBA;
+  scale: ColorScale;
+}
+
+export function createColorMap(
+  colors: string[],
+  { alpha = 200, scale = LINEAR_SCALE }: { alpha?: number; scale?: ColorScale } = {},
+): ColorMap {
   const stops = colors.map(hexToOklch);
 
-  return (value: number, min: number, max: number): RGBA => {
+  const colorMap = ((value: number, min: number, max: number): RGBA => {
     const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
     const idx = t * (stops.length - 1);
     const lo = Math.floor(idx);
@@ -107,21 +128,48 @@ export function createColorMap(colors: string[], alpha = 200) {
     const h = lerpAngle(stops[lo][2], stops[hi][2], f);
 
     return oklchToRgba(L, C, h, alpha);
-  };
+  }) as ColorMap;
+
+  colorMap.scale = scale;
+  return colorMap;
+}
+
+/**
+ * 값을 [0,1]로 정규화한다. `scale`에 따라 선형/asinh 매핑을 고른다.
+ * 컬러바 tick 위치 계산 등 LUT 밖에서도 동일 매핑을 재사용하려고 export 한다.
+ */
+export function normalizeValue(
+  value: number,
+  min: number,
+  max: number,
+  scale: ColorScale,
+): number {
+  const span = max - min;
+  if (span === 0) return 0;
+  // min>max(반전 범위)도 지원하려고 값이 아니라 결과 t를 클램프한다.
+  const t =
+    scale.type === 'asinh'
+      ? Math.asinh((value - min) / scale.scale) /
+        Math.asinh(span / scale.scale)
+      : (value - min) / span;
+  return t < 0 ? 0 : t > 1 ? 1 : t;
 }
 
 // Precompute a `size`-step RGB lookup table from a color map. Each entry is
 // 4 floats (R, G, B, A) in 0..1, ready to feed into deck.gl color buffers.
 // 모든 sRGB↔OKLCH 변환을 여기서 끝내고, 핫 루프에서는 인덱스 조회만 한다.
+// 램프 자체는 항상 균등 샘플링하고, 값→색 매핑의 비선형성은 조회 시점에
+// `scale`로 적용한다.
 export interface ColorLut {
   rgba: Float32Array;
   size: number;
   min: number;
   max: number;
+  scale: ColorScale;
 }
 
 export function buildColorLut(
-  colorMap: (value: number, min: number, max: number) => RGBA,
+  colorMap: ColorMap,
   min: number,
   max: number,
   size = 256,
@@ -135,7 +183,8 @@ export function buildColorLut(
     rgba[i * 4 + 2] = b / 255;
     rgba[i * 4 + 3] = a / 255;
   }
-  return { rgba, size, min, max };
+  // 값→색 매핑 비선형성은 컬러맵이 들고 있다. LUT가 그대로 물려받는다.
+  return { rgba, size, min, max, scale: colorMap.scale };
 }
 
 /**
@@ -148,15 +197,12 @@ export function valuesToRgbaFloat32(
   transparentValue: number | null = 0,
 ): Float32Array {
   const out = new Float32Array(values.length * 4);
-  const span = lut.max - lut.min;
   const lastIdx = lut.size - 1;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
     if (transparentValue !== null && v === transparentValue) continue;
-    let t = (v - lut.min) / span;
-    if (t < 0) t = 0;
-    else if (t > 1) t = 1;
-    const idx = (t * lastIdx) | 0;
+    const t = normalizeValue(v, lut.min, lut.max, lut.scale);
+    const idx = (t * lastIdx + 0.5) | 0;
     const o = i * 4;
     const l = idx * 4;
     out[o] = lut.rgba[l];
@@ -186,7 +232,17 @@ const OCEAN_STOPS = [
   '#5F63FF',
 ];
 
-export const oceanColorMap = createColorMap(OCEAN_STOPS);
+export const oceanColorMap = createColorMap([...OCEAN_STOPS].reverse());
 
-// 수심용: 낮은 값=파랑, 높은 값=노랑
-export const depthColorMap = createColorMap([...OCEAN_STOPS].reverse());
+// 수심용. 동적 범위가 커서(얕은 연안~수천 m) asinh로 매핑해 낮은 값일수록
+// 색 변화를 조밀하게 둔다. scale이 작을수록 얕은 수심 해상도가 커진다.
+export const depthColorMap = createColorMap(OCEAN_STOPS, {
+  scale: { type: 'asinh', scale: 10 },
+});
+
+// 파고용. 방향은 oceanColorMap과 동일(낮음=파랑, 높음=노랑)하게 스톱을 뒤집되,
+// 작은 파고(0~1m)의 색 해상도를 키우려고 asinh로 매핑한다. scale이 작을수록
+// 저파고 구간에 더 넓은 색 범위가 배분된다.
+export const waveColorMap = createColorMap([...OCEAN_STOPS].reverse(), {
+  scale: { type: 'asinh', scale: 0.5 },
+});
