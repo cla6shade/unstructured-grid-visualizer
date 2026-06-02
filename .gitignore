@@ -17,6 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Tile manifest data source (좌표는 portTiles.ts로 옮겨 사용)
+tiles_by_port.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

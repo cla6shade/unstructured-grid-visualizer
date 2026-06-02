@@ -38,6 +38,12 @@ Code lives under `src/features/<feature>/` with a consistent internal shape:
 primitives (tile math, binary decode, color maps, network wrappers). Comments are in Korean — match
 that when editing existing files.
 
+The main features: `map/` (the maplibre shell + its sub-features: `viewport`, `scenario`, `basemap`,
+`deck`, `loading`, `layerSelector`, `debug`); `tiles/` (shared tile-fetch/decode hooks); `contour/`
+and `vector/` (per-field merge + custom deck.gl layers); `mesh/` (mesh-tile fetch); and `layers/`,
+which holds the declarative layer registry (`layers/core/`) plus one folder per renderable field
+(`coastline`, `freeSurface`, `waterDepth`, `current`), each contributing a fetcher and scale constants.
+
 ### State: two store patterns (both zustand)
 
 - **Provider-scoped instance stores** (`createStore` + React context + a `use*` hook): `viewport`,
@@ -48,7 +54,9 @@ that when editing existing files.
   Imported directly, no provider.
 
 All stores use the `devtools` middleware. Provider nesting (see `MapRoot`):
-`ViewportProvider → ScenarioProvider → BasemapProvider → <Map>`.
+`ViewportProvider → LoadingStatusProvider → ScenarioProvider → BasemapProvider → <Map>`. The
+`ScenarioProvider` lives inside a `Suspense` that shows `InitialLoadingScreen` while the catalog
+resolves.
 
 ### The deck.gl overlay registry
 
@@ -58,26 +66,42 @@ Layer feature-components do **not** render deck layers directly — they build a
 `zIndex` (lower = drawn first/below), and calls `overlay.setProps`. Registration is keyed by `id`;
 unmount removes the group (debounced via `queueMicrotask` to absorb StrictMode double-effects).
 
-To add a deck.gl layer: write a component that returns `null`, computes its `Layer[]` with `useMemo`,
-and registers them. Mount it inside `<DeckOverlayProvider>` in `MapRoot`.
+To add a low-level deck.gl layer: write a component that returns `null`, computes its `Layer[]` with
+`useMemo`, and registers them via `useRegisterLayerGroup`. Mount it inside `<DeckOverlayProvider>`.
+
+### The layer registry
+
+Renderable fields are declared **data-first** in `features/layers/core/registry.ts` as
+`MAP_LAYER_SPECS` — one entry per layer with `type` (`coastline` | `contour` | `flow`), `id`,
+`zIndex`, visibility, label, and a `fetcher`. `MapLayers` maps each spec to a thin component
+(`CoastlineLayer` / `ContourLayer` / `FlowLayer`) that runs the surface hook and registers the deck
+group. `LAYER_DEFS` (derived from the selectable specs) drives the `LayerSelector` toggle UI.
+
+**To add a new contour/flow field: add a spec entry + write its fetcher.** No new wiring component is
+needed — `ContourLayer`/`FlowLayer` are generic over the fetcher.
 
 ### The contour tile pipeline (core data flow)
 
 This is the heart of the app. Mesh-based scalar fields (free surface, water depth) flow through a
 **fetcher-driven, multi-layer react-query cache** designed so that scrubbing the timestamp recomputes
-as little as possible:
+as little as possible. The shared tile machinery lives in `features/tiles/` and is reused by both
+contour and vector pipelines:
 
-1. A layer defines a `ContourTileFetcher` (`features/contour/types.ts`) — URL builders, cache-key
-   builders, value-key list, and a `toColors` function. See `freeSurfaceFetcher.ts` for the template.
-2. `useContourSurface(fetcher)` reads viewport + scenario, computes the visible z=6 tiles
-   (`getTileCoordsInBounds`), then composes:
+1. A fetcher extends the shared `TileSource` base (`features/tiles/types.ts` — URL/cache-key builders
+   + `valueKeys`) and adds a render-specific transform: `ContourTileFetcher.toColors` (RGBA) or
+   `VectorTileFetcher.toVectors`. See `freeSurfaceFetcher.ts` / `currentFetcher.ts` for templates.
+2. `useContourSurface(fetcher)` (or `useVectorSurface`) reads viewport + scenario and composes the
+   shared hooks:
+   - `useTilesInView(z)` — computes the visible z=6 tiles (contour data is z=6 only).
+   - `useFetcherCtx()` — packages the current `{ typhoonId, scenarioId, timestamp }` for value keys.
    - `useDerivedMeshTiles` — fetches+decodes the mesh tile, derives `{positions, conn, globalNodes}`.
      Cached under `meshKey + 'derived'`, **independent of timestamp/scenario** (geometry is static).
-   - `useColoredTiles` — fetches the values tile for the current scenario/timestamp, runs `toColors`
-     into an RGBA buffer. Cached under `valuesKey + 'colors'`.
+   - `useValueBufferTiles` — fetches the values tile for the current scenario/timestamp and runs the
+     transform (`toColors`/`toVectors`) into a typed-array buffer. Cached under `valuesKey + tag`.
 3. `mergeSurface` concatenates the per-tile typed arrays into one `SurfaceMesh`
    (`positions`/`colors`/`indices`) — concat + index remap only, no per-vertex recompute.
-4. `createContourLayer` wraps it in the custom `ContourSurface` deck.gl layer.
+4. `createContourLayer` wraps it in the custom `ContourSurface` deck.gl layer. `isLoaded` (all tiles
+   for the current viewport+timestamp arrived) is reported to the loading store.
 
 Cache strategy (`queryClient.ts`): `staleTime: Infinity`, long `gcTime` — tiles are URL-immutable, so
 this maximizes dedupe/reuse across pans and timestamp changes. `apiFetch` defaults to
@@ -99,8 +123,14 @@ order used to slice the buffer.
 
 `src/lib/colorMap.ts` does perceptual color interpolation in **OKLCH/OKLab** (full sRGB↔linear↔OKLab
 conversion). `buildColorLut(colorMap, min, max)` precomputes a lookup table; `valuesToRgbaFloat32`
-maps a value array through it. To invert the high→low color direction, swap `min`/`max` (see
-`freeSurfaceFetcher`).
+maps a value array through it (nodes equal to `transparentValue`, default `0`, are left alpha-0). To
+invert the high→low color direction, swap `min`/`max` (see `freeSurfaceFetcher`).
+
+A color map carries a `ColorScale` (`{ type: 'linear' }` or `{ type: 'asinh'; scale }`). The ramp is
+always sampled **uniformly**; the value→position nonlinearity is applied at lookup time by
+`normalizeValue`, so asinh compresses low values across a wider color range (used by `depthColorMap`
+for the large shallow-to-deep dynamic range). `normalizeValue` is exported so colorbar tick positions
+(`features/layers/core/colorBar.ts` + `ColorBar`) use the exact same mapping as the rendered mesh.
 
 ### Coastline masking
 
@@ -115,3 +145,11 @@ deck.gl mask layer registered under `COASTLINE_MASK_ID`. Other deck.gl layers cl
 queries, which re-colors the contour surface without refetching geometry. Note the two timestamp
 conventions documented in `scenario/types.ts`: catalog `first_time`/`last_time` are bare KST strings,
 while store `timestamp` carries the `+09:00` offset.
+
+### Loading status
+
+The `loading/` feature tracks first-load progress keyed by `[timestamp][layerId]`. Layer hooks call
+`markIsInitialLoaded(layerId, ts)` (via `useReportInitialLoad`) once their tiles for a timestamp have
+arrived; the call is idempotent and deferred with `queueMicrotask` because it fires during render.
+`InitialLoadingScreen` is the catalog-suspense fallback; `LoadingOverlay` shows per-timestamp layer
+progress while scrubbing.
