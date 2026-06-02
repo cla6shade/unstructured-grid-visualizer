@@ -3,9 +3,9 @@ import { devtools } from 'zustand/middleware';
 import {
   DEFAULT_NATIONWIDE_DENSITY,
   DEFAULT_PORT_DENSITY,
-} from '@/features/map/currentDensity/constants/density';
+} from '@/features/map/density/constants/density';
 
-interface CurrentDensityStore {
+interface DensityStore {
   /** 전국(base, z=6) 흐름 파티클 수. */
   nationwide: number;
   /** 항구(detail, z=11) 흐름 파티클 수. */
@@ -14,7 +14,7 @@ interface CurrentDensityStore {
   setPort: (n: number) => void;
 }
 
-export const useCurrentDensityStore = create<CurrentDensityStore>()(
+export const useDensityStore = create<DensityStore>()(
   devtools(
     (set) => ({
       nationwide: DEFAULT_NATIONWIDE_DENSITY,
@@ -22,6 +22,6 @@ export const useCurrentDensityStore = create<CurrentDensityStore>()(
       setNationwide: (n) => set({ nationwide: n }, undefined, 'setNationwide'),
       setPort: (n) => set({ port: n }, undefined, 'setPort'),
     }),
-    { name: 'CurrentDensityStore' },
+    { name: 'DensityStore' },
   ),
 );

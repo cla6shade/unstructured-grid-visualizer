@@ -239,3 +239,10 @@ export const oceanColorMap = createColorMap([...OCEAN_STOPS].reverse());
 export const depthColorMap = createColorMap(OCEAN_STOPS, {
   scale: { type: 'asinh', scale: 10 },
 });
+
+// 파고용. 방향은 oceanColorMap과 동일(낮음=파랑, 높음=노랑)하게 스톱을 뒤집되,
+// 작은 파고(0~1m)의 색 해상도를 키우려고 asinh로 매핑한다. scale이 작을수록
+// 저파고 구간에 더 넓은 색 범위가 배분된다.
+export const waveColorMap = createColorMap([...OCEAN_STOPS].reverse(), {
+  scale: { type: 'asinh', scale: 0.5 },
+});

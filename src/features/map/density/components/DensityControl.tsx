@@ -1,7 +1,7 @@
 import { useLayerStore } from '@/features/map/layerSelector/store/layerStore';
 import { useLocationStore } from '@/features/map/locationSelector/store/locationStore';
 import { KOREA_LOCATION_ID } from '@/features/map/locationSelector/constants/locations';
-import { useCurrentDensityStore } from '@/features/map/currentDensity/store/currentDensityStore';
+import { useDensityStore } from '@/features/map/density/store/densityStore';
 import {
   NATIONWIDE_DENSITY_MIN,
   NATIONWIDE_DENSITY_MAX,
@@ -9,26 +9,26 @@ import {
   PORT_DENSITY_MIN,
   PORT_DENSITY_MAX,
   PORT_DENSITY_STEP,
-} from '@/features/map/currentDensity/constants/density';
+} from '@/features/map/density/constants/density';
 
 /**
- * 해류 흐름 파티클 밀도 조정 패널.
- * - 해류 레이어가 켜져 있을 때만 표시.
+ * 흐름 파티클 밀도 조정 패널. 해류·파랑이 flow line으로 공유한다.
+ * - 해류 또는 파랑 레이어가 켜져 있을 때만 표시.
  * - 전국 density는 항상, 항구 density는 항구 줌(location ≠ korea)일 때만 노출.
  */
-export function CurrentDensityControl() {
-  const visible = useLayerStore((s) => s.layers.current);
+export function DensityControl() {
+  const visible = useLayerStore((s) => s.layers.current || s.layers.wave);
   const isPort = useLocationStore((s) => s.location.id !== KOREA_LOCATION_ID);
-  const nationwide = useCurrentDensityStore((s) => s.nationwide);
-  const port = useCurrentDensityStore((s) => s.port);
-  const setNationwide = useCurrentDensityStore((s) => s.setNationwide);
-  const setPort = useCurrentDensityStore((s) => s.setPort);
+  const nationwide = useDensityStore((s) => s.nationwide);
+  const port = useDensityStore((s) => s.port);
+  const setNationwide = useDensityStore((s) => s.setNationwide);
+  const setPort = useDensityStore((s) => s.setPort);
 
   if (!visible) return null;
 
   return (
     <div className="flex flex-col gap-2 bg-[rgba(44,46,52,0.85)] rounded-[8px] px-3 py-2 text-[12px] text-[#e7eaef] font-mono select-none pointer-events-auto">
-      <div className="text-[#bcbfc5]">해류 밀도</div>
+      <div className="text-[#bcbfc5]">입자 밀도</div>
       <DensityRow
         label="전국"
         value={nationwide}
