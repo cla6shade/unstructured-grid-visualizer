@@ -15,8 +15,11 @@ const VECTOR_TILE_Z = 6;
  * mesh 파생물(positions/conn)은 useDerivedMeshTiles로 contour와 캐시를 공유하고,
  * (u, v)는 useValueBufferTiles로 별도 캐싱된다. indices를 유지하므로 barycentric 보간에 그대로 쓸 수 있다.
  */
-export function useVectorSurface(fetcher: VectorTileFetcher): VectorMesh {
-  const tiles = useTilesInView(VECTOR_TILE_Z);
+export function useVectorSurface(
+  fetcher: VectorTileFetcher,
+  enabled = true,
+): VectorMesh {
+  const tiles = useTilesInView(VECTOR_TILE_Z, { enabled });
   const ctx = useFetcherCtx();
 
   const derived = useDerivedMeshTiles(tiles, fetcher);

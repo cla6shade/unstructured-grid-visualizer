@@ -13,10 +13,7 @@ import { ScenarioTimeSelector } from '@/features/map/scenario/components/Scenari
 import { LayerSelector } from '@/features/map/layerSelector/components/LayerSelector';
 import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
-import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
-import { FreeSurfaceLayer } from '@/features/layers/freeSurface/components/FreeSurfaceLayer';
-import { WaterDepthLayer } from '@/features/layers/waterDepth/components/WaterDepthLayer';
-import { CurrentLayer } from '@/features/layers/current/components/CurrentLayer';
+import { MapLayers } from '@/features/layers/core/components/MapLayers';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,
@@ -67,10 +64,7 @@ function MapView() {
         style={{ width: '100%', height: '100%' }}
       >
         <DeckOverlayProvider>
-          <CoastlineLayer />
-          <FreeSurfaceLayer />
-          <WaterDepthLayer />
-          <CurrentLayer />
+          <MapLayers />
         </DeckOverlayProvider>
       </Map>
       <BasemapSelector />

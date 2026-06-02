@@ -19,8 +19,11 @@ const CONTOUR_TILE_Z = 6;
  *
  * mergeSurface는 캐시된 typed array들을 concat·remap만 수행.
  */
-export function useContourSurface(fetcher: ContourTileFetcher): SurfaceMesh {
-  const tiles = useTilesInView(CONTOUR_TILE_Z);
+export function useContourSurface(
+  fetcher: ContourTileFetcher,
+  enabled = true,
+): SurfaceMesh {
+  const tiles = useTilesInView(CONTOUR_TILE_Z, { enabled });
   const ctx = useFetcherCtx();
 
   const derived = useDerivedMeshTiles(tiles, fetcher);
