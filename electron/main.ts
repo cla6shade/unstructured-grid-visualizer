@@ -1,10 +1,6 @@
 import { app, BrowserWindow, session, shell } from 'electron'
 import path from 'node:path'
 
-// dev에서는 dev-electron.mjs가 vite dev 서버 URL을 주입한다.
-// production에서는 패키징된 dist/index.html을 file://로 로드한다.
-const devServerUrl = process.env.VITE_DEV_SERVER_URL
-
 function createWindow() {
   const win = new BrowserWindow({
     width: 1920,
@@ -21,13 +17,8 @@ function createWindow() {
     },
   })
 
-  if (devServerUrl) {
-    win.loadURL(devServerUrl)
-    win.webContents.openDevTools({ mode: 'detach' })
-  } else {
-    // dist-electron/main.js 기준 ../dist/index.html
-    win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
-  }
+  // 패키징된 dist/index.html을 file://로 로드한다. (dist-electron/main.js 기준 ../dist/index.html)
+  win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
 
   // 외부 링크는 OS 기본 브라우저로 연다.
   win.webContents.setWindowOpenHandler(({ url }) => {

@@ -11,17 +11,13 @@ KOOS 웹 앱(vite + React)을 Electron 데스크톱 앱으로 패키징하는 �
 | `electron/preload.ts` | contextIsolation 유지한 최소 브릿지(`window.koosDesktop`) |
 | `electron/tsconfig.json` | main/preload를 CommonJS로 컴파일(`dist-electron/`) |
 | `scripts/build-electron-main.mjs` | main/preload 컴파일 + `dist-electron/package.json`(`type: commonjs`) 생성 |
-| `scripts/dev-electron.mjs` | 개발용: vite dev 서버 + Electron 동시 기동(HMR) |
 | `scripts/run-electron.sh` | 빌드된 AppImage 실행 스크립트(환경별 플래그 포함) |
 | `package.json` `build` | electron-builder 설정(AppImage/nsis/dmg) |
 
 ## npm 스크립트
 
 ```bash
-pnpm electron:dev     # 개발 실행 (vite dev + electron, HMR)
-pnpm electron:build   # 렌더러(dist/) + main(dist-electron/) 빌드만
-pnpm electron:dist    # 위 + electron-builder로 설치형 바이너리 패키징
-pnpm electron:dir     # 위 + 압축 해제(unpacked) 디렉터리만 (배포 패키지 X)
+pnpm electron:dist    # 렌더러(dist/) + main(dist-electron/) 컴파일 + electron-builder 패키징을 한 번에
 ```
 
 ### 빌드 시 `base` 분기
@@ -31,7 +27,7 @@ pnpm electron:dir     # 위 + 압축 해제(unpacked) 디렉터리만 (배포 �
 - 웹 배포: `base: '/koos'` (nginx `location /koos/`와 매칭)
 - Electron: `base: './'` — `file://`에서 로드하므로 상대 경로 필요
 
-`electron:build` 스크립트가 `BUILD_TARGET=electron`을 세팅하므로 별도 조작 불필요.
+`electron:dist` 스크립트가 `BUILD_TARGET=electron`을 세팅하므로 별도 조작 불필요.
 
 ## 산출물
 
