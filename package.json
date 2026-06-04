@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron:dist": "BUILD_TARGET=electron tsc -b && BUILD_TARGET=electron vite build && node scripts/build-electron-main.mjs && electron-builder"
+    "electron:dist": "BUILD_TARGET=electron tsc -b && BUILD_TARGET=electron vite build && node scripts/build-electron-main.mjs && electron-builder --publish never"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.7",
