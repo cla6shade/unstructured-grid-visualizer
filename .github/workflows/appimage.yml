@@ -1,0 +1,58 @@
+name: Release AppImage
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Enable corepack and setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.2 --activate
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Inject .env
+        run: printenv APP_ENV_FILE > .env
+        env:
+          APP_ENV_FILE: ${{ secrets.APP_ENV_FILE }}
+
+      # package.json version을 릴리즈 버전의 단일 소스로 삼는다.
+      # (electron-builder도 같은 값으로 KOOS-<version>.AppImage를 만든다.)
+      - name: Read version from package.json
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # ubuntu-latest는 x64 러너라 electron-builder가 amd64 AppImage를 빌드한다.
+      - name: Build AppImage (amd64)
+        run: pnpm electron:dist
+
+      - name: Upload AppImage as workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: KOOS-AppImage-amd64
+          path: release/*.AppImage
+          if-no-files-found: error
+
+      # package.json version 기준 v<version> 릴리즈를 생성/갱신하고 AppImage를 첨부한다.
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: v${{ steps.pkg.outputs.version }}
+          files: release/*.AppImage
