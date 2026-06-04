@@ -5,9 +5,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // /koos 하위 경로 배포. asset을 /koos/assets/...로 내보내 nginx location /koos/와 맞춘다.
+  // 웹 배포: /koos 하위 경로. asset을 /koos/assets/...로 내보내 nginx location /koos/와 맞춘다.
   // (koos-front 웹 빌드와 동일 규약)
-  base: '/koos',
+  // Electron 패키징(BUILD_TARGET=electron): file://에서 로드하므로 상대 경로('./')로 내보낸다.
+  base: process.env.BUILD_TARGET === 'electron' ? './' : '/koos',
   plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
