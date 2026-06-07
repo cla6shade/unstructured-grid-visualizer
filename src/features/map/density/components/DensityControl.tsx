@@ -27,8 +27,8 @@ export function DensityControl() {
   if (!visible) return null;
 
   return (
-    <div className="flex flex-col gap-2 bg-[rgba(44,46,52,0.85)] rounded-[8px] px-3 py-2 text-[12px] text-[#e7eaef] font-mono select-none pointer-events-auto">
-      <div className="text-[#bcbfc5]">입자 밀도</div>
+    <div className="flex flex-col gap-2 bg-background/85 rounded-[8px] px-3 py-2 text-xs text-foreground-muted font-mono select-none pointer-events-auto">
+      <div className="text-map-content-faint">입자 밀도</div>
       <DensityRow
         label="전국"
         value={nationwide}
@@ -76,9 +76,9 @@ function DensityRow({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-32 accent-[#2b68d6]"
+        className="w-32 accent-primary"
       />
-      <span className="w-12 text-right tabular-nums text-[#bcbfc5]">{value}</span>
+      <span className="w-12 text-right tabular-nums text-map-content-faint">{value}</span>
     </label>
   );
 }

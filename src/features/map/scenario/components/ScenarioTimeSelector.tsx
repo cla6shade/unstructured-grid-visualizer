@@ -152,7 +152,7 @@ export function ScenarioTimeSelector() {
   if (!range) return null;
 
   return (
-    <div className="absolute bottom-[16px] left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-[rgba(44,46,52,0.8)] rounded-[12px] px-3 py-3 w-[1040px] h-[59px] select-none">
+    <div className="absolute bottom-[16px] left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-surface rounded-[12px] px-3 py-3 w-260 h-15 select-none">
       <TyphoonIdPicker
         value={typhoonId}
         options={typhoonOptions}

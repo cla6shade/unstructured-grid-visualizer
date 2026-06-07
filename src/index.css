@@ -8,6 +8,7 @@
   /* Brand */
   --color-primary: #2b68d6;
   --color-primary-muted: #cbdeff;
+  --color-primary-soft: #d8e8ff;
 
   /* SVG palette */
   --color-map-canvas: #000012;
@@ -15,10 +16,12 @@
   --color-map-surface: #2c2e34;
   --color-map-surface-raised: #595b5f;
   --color-map-control: #e1e5ed;
+  --color-map-control-soft: #cfd2d8;
   --color-map-control-muted: #c5c9ce;
   --color-map-control-disabled: #979a9d;
   --color-map-content: #ffffff;
   --color-map-content-strong: #e7eaef;
+  --color-map-content-faint: #bcbfc5;
   --color-map-content-muted: #acb0bb;
   --color-map-content-subtle: #a5a8ac;
   --color-map-icon: #7d8089;

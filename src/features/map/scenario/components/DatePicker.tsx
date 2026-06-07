@@ -62,18 +62,18 @@ export function DatePicker({ value, options, onChange }: DatePickerProps) {
     <div ref={containerRef} className="relative shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center justify-between w-[116px] rounded-[8px] pl-3 pr-2 py-2 cursor-pointer text-[16px] font-medium text-[#e7eaef] bg-[#7d8089] transition-all"
+        className="flex items-center justify-between w-29 rounded-[8px] pl-3 pr-2 py-2 cursor-pointer text-base font-medium text-foreground-muted bg-map-icon transition-all"
       >
         <span>{selected ? formatDateShort(value) : '일자 선택'}</span>
         {open ? (
-          <ChevronUp size={16} className="text-[#e7eaef]" />
+          <ChevronUp size={16} className="text-foreground-muted" />
         ) : (
-          <ChevronDown size={16} className="text-[#e7eaef]" />
+          <ChevronDown size={16} className="text-foreground-muted" />
         )}
       </button>
 
       {open && (
-        <div className="absolute bottom-12 left-3 mb-1 w-[116px] bg-[rgba(125,128,137,0.9)] rounded-[8px] shadow-[0px_0px_12px_rgba(29,29,29,0.2)] pl-3 pr-10 py-4 z-50">
+        <div className="absolute bottom-12 left-3 mb-1 w-29 bg-map-icon/90 rounded-[8px] shadow-[0px_0px_12px_rgba(29,29,29,0.2)] pl-3 pr-10 py-4 z-50">
           <div className="flex flex-col gap-3">
             {options.map((date) => {
               const isSelected = isSameDay(date, value);
@@ -81,10 +81,10 @@ export function DatePicker({ value, options, onChange }: DatePickerProps) {
                 <button
                   key={date.getTime()}
                   onClick={() => handleSelect(date)}
-                  className={`text-left text-[16px] font-medium cursor-pointer whitespace-nowrap transition-colors ${
+                  className={`text-left text-base font-medium cursor-pointer whitespace-nowrap transition-colors ${
                     isSelected
                       ? 'text-white'
-                      : 'text-[#bcbfc5] hover:text-white'
+                      : 'text-map-content-faint hover:text-white'
                   }`}
                 >
                   {formatDateLabel(date)}

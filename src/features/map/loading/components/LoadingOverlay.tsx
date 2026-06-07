@@ -67,9 +67,9 @@ export function LoadingOverlay() {
 
 function MovingOverlay({ label }: { label: string }) {
   return (
-    <div className="fixed inset-0 z-[2000] bg-[#000012] flex items-center justify-center select-none">
-      <p className="text-[20px] font-bold tracking-tight">
-        <span className="text-[#2b68d6]">{label}</span>
+    <div className="fixed inset-0 z-[2000] bg-map-canvas flex items-center justify-center select-none">
+      <p className="text-xl font-bold tracking-tight">
+        <span className="text-primary">{label}</span>
         <span className="text-white ml-[0.2rem]">
           {directionParticle(label)} 이동 중...
         </span>

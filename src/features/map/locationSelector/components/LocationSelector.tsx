@@ -19,7 +19,7 @@ export function LocationSelector({ onSelect }: LocationSelectorProps) {
   const isNational = activeId === KOREA_LOCATION_ID;
 
   return (
-    <div className="absolute top-10 left-10 z-[1000] flex items-center gap-6 bg-[rgba(44,46,52,0.8)] rounded-[12px] p-3 select-none">
+    <div className="absolute top-10 left-10 z-[1000] flex items-center gap-6 bg-surface rounded-[12px] p-3 select-none">
       <div className="flex gap-4 items-center">
         {PORTS.map((loc) => {
           const active = activeId === loc.id;
@@ -28,10 +28,10 @@ export function LocationSelector({ onSelect }: LocationSelectorProps) {
               key={loc.id}
               onClick={() => onSelect(loc.id)}
               disabled={active}
-              className={`w-[60px] h-[60px] rounded-full text-[20px] text-[#e7eaef] transition-all ${
+              className={`w-15 h-15 rounded-full text-xl text-foreground-muted transition-all ${
                 active
-                  ? 'bg-[#2b68d6] font-bold cursor-default'
-                  : 'bg-[rgba(44,46,52,0.8)] font-medium cursor-pointer hover:bg-[#3a3c42]'
+                  ? 'bg-primary font-bold cursor-default'
+                  : 'bg-surface font-medium cursor-pointer hover:bg-background-hover'
               }`}
             >
               {loc.label}
@@ -42,10 +42,10 @@ export function LocationSelector({ onSelect }: LocationSelectorProps) {
       <button
         onClick={() => onSelect(KOREA_LOCATION_ID)}
         disabled={isNational}
-        className={`h-[60px] w-[161px] rounded-[120px] text-[20px] transition-all ${
+        className={`h-15 w-40 rounded-[120px] text-xl transition-all ${
           isNational
-            ? 'bg-[#2b68d6] text-white font-bold cursor-default'
-            : 'bg-[rgba(44,46,52,0.8)] text-[#e7eaef] font-medium cursor-pointer hover:bg-[#3a3c42]'
+            ? 'bg-primary text-white font-bold cursor-default'
+            : 'bg-surface text-foreground-muted font-medium cursor-pointer hover:bg-background-hover'
         }`}
       >
         전국 지도 보기
