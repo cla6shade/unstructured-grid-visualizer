@@ -1,4 +1,5 @@
 import { LAYER_VALUE_KEYS } from '@/lib/binaryTile';
+import { useDebugStatsStore } from '@/features/map/debug/store/debugStatsStore';
 import type { VectorTileFetcher } from '@/features/vector/types';
 
 const LAYER = 'current';
@@ -21,10 +22,16 @@ export const currentFetcher: VectorTileFetcher = {
     const v = values['V'];
     const n = u.length;
     const out = new Float32Array(n * 2);
+    // 디버그 오버레이용 유속(|(u, v)|, m/s) 분포. 라인 색이 이 값을 쓴다.
+    const speed = new Float32Array(n);
     for (let i = 0; i < n; i++) {
       out[i * 2] = u[i];
       out[i * 2 + 1] = v[i];
+      speed[i] = Math.hypot(u[i], v[i]);
     }
+    queueMicrotask(() =>
+      useDebugStatsStore.getState().report('current', 'speed', speed),
+    );
     return out;
   },
 };
