@@ -19,7 +19,7 @@ export function LocationSelector({ onSelect }: LocationSelectorProps) {
   const isNational = activeId === KOREA_LOCATION_ID;
 
   return (
-    <div className="absolute top-10 left-10 z-[1000] flex items-center gap-6 bg-surface rounded-[12px] p-3 select-none">
+    <div className="flex items-center gap-6 bg-surface rounded-[12px] p-3 select-none">
       <div className="flex gap-4 items-center">
         {PORTS.map((loc) => {
           const active = activeId === loc.id;
