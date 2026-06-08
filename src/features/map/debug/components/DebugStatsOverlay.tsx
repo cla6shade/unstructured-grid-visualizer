@@ -10,9 +10,9 @@ export function DebugStatsOverlay() {
   const entries = Object.entries(stats);
 
   return (
-    <div className="flex flex-col gap-1 bg-[rgba(44,46,52,0.85)] rounded-[8px] px-3 py-2 text-[12px] text-[#e7eaef] font-mono select-none pointer-events-none">
-      <div className="text-[#bcbfc5] mb-1">값 범위 (디버그)</div>
-      {entries.length === 0 && <div className="text-[#7b7f84]">데이터 없음</div>}
+    <div className="flex flex-col gap-1 bg-background/85 rounded-[8px] px-3 py-2 text-xs text-foreground-muted font-mono select-none pointer-events-none">
+      <div className="text-map-content-faint mb-1">값 범위 (디버그)</div>
+      {entries.length === 0 && <div className="text-map-icon-muted">데이터 없음</div>}
       {entries.map(([layerId, s]) => (
         <div key={layerId} className="flex gap-2">
           <span className="text-white">
@@ -21,7 +21,7 @@ export function DebugStatsOverlay() {
           <span>
             min={s.min.toFixed(3)} max={s.max.toFixed(3)}
           </span>
-          <span className="text-[#7b7f84]">
+          <span className="text-map-icon-muted">
             ({s.nonZeroCount}/{s.count})
           </span>
         </div>

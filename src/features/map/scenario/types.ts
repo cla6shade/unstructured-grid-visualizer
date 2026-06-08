@@ -11,6 +11,7 @@ export interface ScenarioTimes {
 
 export interface CatalogTyphoon {
   typhoon_id: string;
+  typhoon_name: string;
   scenario_ids: string[];
 }
 

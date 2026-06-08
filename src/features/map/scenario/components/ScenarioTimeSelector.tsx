@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useScenario } from '@/features/map/scenario/hooks/useScenario';
-import {
-  formatKstIso,
-  nearestHourlyTimestamp,
-  parseKstNaive,
-} from '@/lib/timeUtils';
+import { formatKstIso, parseKstNaive } from '@/lib/timeUtils';
 import { AmPmPicker } from './AmPmPicker';
 import { DatePicker } from './DatePicker';
 import { PlayButton } from './PlayButton';
-import { ScenarioIdPicker } from './ScenarioIdPicker';
 import { TimeDotTrack } from './TimeDotTrack';
-import { TyphoonIdPicker } from './TyphoonIdPicker';
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -27,8 +21,6 @@ export function ScenarioTimeSelector() {
   const typhoonId = useScenario((s) => s.typhoonId);
   const scenarioId = useScenario((s) => s.scenarioId);
   const timestamp = useScenario((s) => s.timestamp);
-  const setScenarioId = useScenario((s) => s.setScenarioId);
-  const setTyphoonId = useScenario((s) => s.setTyphoonId);
   const setTimestamp = useScenario((s) => s.setTimestamp);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -80,18 +72,6 @@ export function ScenarioTimeSelector() {
     );
   }, [selectedDate, ampmDerived]);
 
-  const scenarioOptions = useMemo(
-    () =>
-      catalog.typhoons.find((t) => t.typhoon_id === typhoonId)?.scenario_ids ??
-      [],
-    [catalog, typhoonId],
-  );
-
-  const typhoonOptions = useMemo(
-    () => catalog.typhoons.map((t) => t.typhoon_id),
-    [catalog],
-  );
-
   const commitTime = (ms: number) => {
     if (!range) return;
     const clamped = Math.max(range.first, Math.min(range.last, ms));
@@ -107,33 +87,6 @@ export function ScenarioTimeSelector() {
   const handleAmPmChange = (value: '오전' | '오후') => {
     const baseHour = value === '오전' ? 0 : 12;
     commitTime(selectedDate.getTime() + baseHour * HOUR_MS);
-  };
-
-  const handleTyphoonChange = (nextTyphoonId: string) => {
-    const nextTyphoon = catalog.typhoons.find(
-      (t) => t.typhoon_id === nextTyphoonId,
-    );
-    if (!nextTyphoon) return;
-    const nextScenarioId = nextTyphoon.scenario_ids.at(-1);
-    if (!nextScenarioId) return;
-    setTyphoonId(nextTyphoonId);
-    setScenarioId(nextScenarioId);
-    const times = catalog.scenario_times.find(
-      (t) => t.typhoon_id === nextTyphoonId && t.scenario_id === nextScenarioId,
-    );
-    if (times) {
-      setTimestamp(nearestHourlyTimestamp(times.first_time, times.last_time));
-    }
-  };
-
-  const handleScenarioChange = (nextScenarioId: string) => {
-    setScenarioId(nextScenarioId);
-    const times = catalog.scenario_times.find(
-      (t) => t.typhoon_id === typhoonId && t.scenario_id === nextScenarioId,
-    );
-    if (times) {
-      setTimestamp(nearestHourlyTimestamp(times.first_time, times.last_time));
-    }
   };
 
   useEffect(() => {
@@ -152,17 +105,7 @@ export function ScenarioTimeSelector() {
   if (!range) return null;
 
   return (
-    <div className="absolute bottom-[16px] left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-[rgba(44,46,52,0.8)] rounded-[12px] px-3 py-3 w-[1040px] h-[59px] select-none">
-      <TyphoonIdPicker
-        value={typhoonId}
-        options={typhoonOptions}
-        onChange={handleTyphoonChange}
-      />
-      <ScenarioIdPicker
-        value={scenarioId}
-        options={scenarioOptions}
-        onChange={handleScenarioChange}
-      />
+    <div className="absolute bottom-[16px] left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-surface rounded-[12px] px-3 py-3 w-200 h-15 select-none">
       <DatePicker
         value={selectedDate}
         options={dateOptions}

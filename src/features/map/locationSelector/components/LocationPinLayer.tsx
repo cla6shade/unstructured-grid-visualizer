@@ -31,7 +31,7 @@ export function LocationPinLayer({ onSelect }: LocationPinLayerProps) {
           >
             <button
               onClick={() => onSelect(loc.id)}
-              className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-none bg-[rgba(44,46,52,0.8)] text-[20px] font-medium text-white cursor-pointer transition-all hover:bg-[#3a3c42]"
+              className="flex h-15 w-15 items-center justify-center rounded-full border-none bg-surface text-xl font-medium text-white cursor-pointer transition-all hover:bg-background-hover"
             >
               {loc.label}
             </button>

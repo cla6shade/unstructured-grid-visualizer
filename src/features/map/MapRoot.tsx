@@ -10,6 +10,8 @@ import { useSyncView } from '@/features/map/viewport/hooks/useSyncView';
 import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayProvider';
 import { ScenarioProvider } from '@/features/map/scenario/components/ScenarioProvider';
 import { ScenarioTimeSelector } from '@/features/map/scenario/components/ScenarioTimeSelector';
+import { TyphoonScenarioBar } from '@/features/map/scenario/components/TyphoonScenarioBar';
+import { TyphoonSidebar } from '@/features/map/scenario/components/TyphoonSidebar';
 import { LayerSelector } from '@/features/map/layerSelector/components/LayerSelector';
 import { LocationSelector } from '@/features/map/locationSelector/components/LocationSelector';
 import { LocationPinLayer } from '@/features/map/locationSelector/components/LocationPinLayer';
@@ -91,7 +93,11 @@ function MapView() {
         <LocationPinLayer onSelect={goToLocation} />
       </Map>
       <BasemapSelector />
-      <LocationSelector onSelect={goToLocation} />
+      <div className="absolute top-10 left-10 z-[1000] flex flex-col gap-4">
+        <TyphoonScenarioBar />
+        <LocationSelector onSelect={goToLocation} />
+      </div>
+      <TyphoonSidebar />
       <LayerSelector />
       <ScenarioTimeSelector />
       <LoadingOverlay />

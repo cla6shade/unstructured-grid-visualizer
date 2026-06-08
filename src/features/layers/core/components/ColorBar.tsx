@@ -77,8 +77,8 @@ export function ColorBar({ spec }: { spec: ColorBarSpec }) {
   }, [ticks, min, max, scale]);
 
   return (
-    <div className="flex flex-col gap-1 bg-[rgba(44,46,52,0.85)] rounded-[8px] px-3 py-2 text-[11px] text-[#e7eaef] font-mono select-none pointer-events-none">
-      <div className="text-[#bcbfc5] mb-1">{label}</div>
+    <div className="flex flex-col gap-1 bg-background/85 rounded-[8px] px-3 py-2 text-[11px] text-foreground-muted font-mono select-none pointer-events-none">
+      <div className="text-map-content-faint mb-1">{label}</div>
       <div className="relative" style={{ width: BAR_WIDTH }}>
         <div className="h-3 rounded-[3px]" style={{ background: gradient }} />
         <div className="relative h-4">
@@ -88,9 +88,9 @@ export function ColorBar({ spec }: { spec: ColorBarSpec }) {
               className={`absolute top-0 flex flex-col items-center ${align}`}
               style={{ left: `${t * 100}%` }}
             >
-              <span className="w-px h-1.5 bg-[#7b7f84]" />
+              <span className="w-px h-1.5 bg-map-icon-muted" />
               {showLabel && (
-                <span className="mt-0.5 leading-none text-[10px] text-[#cfd2d8] whitespace-nowrap">
+                <span className="mt-0.5 leading-none text-[10px] text-map-control-soft whitespace-nowrap">
                   {value}
                 </span>
               )}

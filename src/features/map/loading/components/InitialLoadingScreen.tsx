@@ -18,7 +18,7 @@ export function InitialLoadingScreen({ rows = [] }: { rows?: LoadingRow[] }) {
   return (
     <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center gap-4 bg-map-canvas select-none">
       <h2 className="text-base font-semibold text-foreground">데이터 로드 중</h2>
-      <ul className="flex min-w-[180px] flex-col gap-2.5">
+      <ul className="flex min-w-45 flex-col gap-2.5">
         {rows.map((row) => (
           <li
             key={row.id}
