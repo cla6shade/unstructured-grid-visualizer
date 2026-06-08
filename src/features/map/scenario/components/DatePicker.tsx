@@ -73,7 +73,7 @@ export function DatePicker({ value, options, onChange }: DatePickerProps) {
       </button>
 
       {open && (
-        <div className="absolute bottom-12 left-3 mb-1 w-29 bg-map-icon/90 rounded-[8px] shadow-[0px_0px_12px_rgba(29,29,29,0.2)] pl-3 pr-10 py-4 z-50">
+        <div className="absolute bottom-full left-0 mb-2 w-max min-w-full bg-map-icon/90 rounded-[8px] shadow-[0px_0px_12px_rgba(29,29,29,0.2)] px-4 py-4 z-50">
           <div className="flex flex-col gap-3">
             {options.map((date) => {
               const isSelected = isSameDay(date, value);
