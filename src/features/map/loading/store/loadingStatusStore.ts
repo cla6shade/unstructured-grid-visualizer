@@ -11,6 +11,15 @@ export function createLoadingStatusStore(): LoadingStatusStoreInstance {
     devtools(
       (set, get) => ({
         loaded: {},
+        hasInitialLoaded: false,
+        markInitialLoaded: () => {
+          if (get().hasInitialLoaded) return;
+          // 렌더 단계에서 호출되므로 set은 microtask로 미룬다.
+          queueMicrotask(() => {
+            if (get().hasInitialLoaded) return;
+            set({ hasInitialLoaded: true }, undefined, 'markInitialLoaded');
+          });
+        },
         markIsInitialLoaded: (layerId, location, ts) => {
           const key = loadViewKey(location, ts);
           // 멱등: 이미 완료면 아무 것도 하지 않는다.
