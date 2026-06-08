@@ -19,9 +19,8 @@ const LUT = buildColorLut(depthColorMap, MIN_DEPTH, MAX_DEPTH, DEPTH_LUT_SIZE);
 
 export const waterDepthFetcher: ContourTileFetcher = {
   valueKeys: LAYER_VALUE_KEYS.surge.water_depth,
-  meshUrl: ({ x, y }, { location }) =>
-    `/api/subset/mesh/${location}/${LAYER}/${x}/${y}`,
-  meshKey: ({ x, y }, { location }) => [location, 'mesh', LAYER, x, y],
+  meshUrl: ({ x, y }, { location }) => `/api/subset/mesh/${location}/${x}/${y}`,
+  meshKey: ({ x, y }, { location }) => [location, 'mesh', x, y],
   valuesUrl: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
     `/api/subset/${typhoonId}/${location}/${scenarioId}/${LAYER}/${timestamp}/${x}/${y}`,
   valuesKey: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>

@@ -18,9 +18,8 @@ const LUT = buildColorLut(oceanColorMap, FREE_SURFACE_MIN, FREE_SURFACE_MAX);
 
 export const freeSurfaceFetcher: ContourTileFetcher = {
   valueKeys: LAYER_VALUE_KEYS.surge.tidal_height,
-  meshUrl: ({ x, y }, { location }) =>
-    `/api/subset/mesh/${location}/${LAYER}/${x}/${y}`,
-  meshKey: ({ x, y }, { location }) => [location, 'mesh', LAYER, x, y],
+  meshUrl: ({ x, y }, { location }) => `/api/subset/mesh/${location}/${x}/${y}`,
+  meshKey: ({ x, y }, { location }) => [location, 'mesh', x, y],
   valuesUrl: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
     `/api/subset/${typhoonId}/${location}/${scenarioId}/${LAYER}/${timestamp}/${x}/${y}`,
   valuesKey: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
