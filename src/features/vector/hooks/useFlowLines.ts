@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { normalizeValue, type ColorLut } from '@/lib/colorMap';
 import {
   createVelocityField,
   type VelocityField,
@@ -31,6 +32,11 @@ export interface FlowParams {
   ageJitter: number;
   /** dt 폭주 방지 상한(초, 탭 비활성 후 복귀 등). */
   maxDt: number;
+  /**
+   * 주어지면 각 trail 점의 유속(|(u, v)|)을 이 LUT로 조회해 선 색을 입힌다.
+   * null이면 고정색(TRAIL_COLOR). 버퍼 크기와 무관하므로 dynRef로 즉시 반영된다.
+   */
+  speedColorLut?: ColorLut | null;
 }
 
 interface Sim {
@@ -40,6 +46,7 @@ interface Sim {
   maxAge: Float32Array;
   trailX: Float32Array; // PARTICLE_COUNT * TRAIL_LENGTH
   trailY: Float32Array;
+  trailS: Float32Array; // 각 trail 점의 유속(|(u, v)|). 색 매핑용.
   /** 유효 trail 점 개수(1..TRAIL_LENGTH). 생성 시 자라고 소멸 시 줄어든다. */
   len: Float32Array;
   /** 소멸 진행 중이면 1. 머리는 멈추고 꼬리가 끝점까지 따라붙는다. */
@@ -69,6 +76,7 @@ function makeSim(particleCount: number, trailLength: number): Sim {
     maxAge: new Float32Array(particleCount),
     trailX: new Float32Array(particleCount * trailLength),
     trailY: new Float32Array(particleCount * trailLength),
+    trailS: new Float32Array(particleCount * trailLength),
     len: new Float32Array(particleCount),
     dying: new Uint8Array(particleCount),
     seeded: false,
@@ -98,6 +106,7 @@ function respawn(
   for (let k = 0; k < trailLength; k++) {
     sim.trailX[base + k] = lon;
     sim.trailY[base + k] = lat;
+    sim.trailS[base + k] = 0;
   }
 }
 
@@ -198,14 +207,17 @@ export function useFlowLines(
           sim.dying[i] = 1;
           continue;
         }
-        // 현재 위치를 trail head로 기록 후 전진.
+        // 현재 위치를 trail head로 기록 후 전진. vel은 (px, py)에서 샘플한 속도라
+        // 그 크기를 head 점의 유속으로 같이 기록한다(색 매핑용).
         const base = i * trailLength;
         for (let k = trailLength - 1; k > 0; k--) {
           sim.trailX[base + k] = sim.trailX[base + k - 1];
           sim.trailY[base + k] = sim.trailY[base + k - 1];
+          sim.trailS[base + k] = sim.trailS[base + k - 1];
         }
         sim.trailX[base] = px;
         sim.trailY[base] = py;
+        sim.trailS[base] = Math.hypot(vel[0], vel[1]);
         if (sim.len[i] < trailLength) sim.len[i] += 1;
         const cosLat = Math.max(Math.cos(py * DEG2RAD), 0.01);
         sim.px[i] = px + (vel[0] * flowSpeed * dt) / cosLat;
@@ -218,6 +230,8 @@ export function useFlowLines(
       const { sources, targets, colors } = buf;
       const segPerParticle = trailLength - 1;
       const [r, g, b] = TRAIL_COLOR;
+      const lut = dynRef.current.speedColorLut;
+      const lutLast = lut ? lut.size - 1 : 0;
       for (let i = 0; i < particleCount; i++) {
         const base = i * trailLength;
         // 유효 trail 점 len개 → 그릴 세그먼트는 (len - 1)개.
@@ -237,9 +251,23 @@ export function useFlowLines(
           targets[s3] = sim.trailX[base + k + 1];
           targets[s3 + 1] = sim.trailY[base + k + 1];
           targets[s3 + 2] = 0;
-          colors[c4] = r;
-          colors[c4 + 1] = g;
-          colors[c4 + 2] = b;
+          if (lut) {
+            // 유속을 LUT로 조회해 색을 정한다. alpha는 head→tail 페이드 유지.
+            const t = normalizeValue(
+              sim.trailS[base + k],
+              lut.min,
+              lut.max,
+              lut.scale,
+            );
+            const o = ((t * lutLast + 0.5) | 0) * 4;
+            colors[c4] = lut.rgba[o] * 255;
+            colors[c4 + 1] = lut.rgba[o + 1] * 255;
+            colors[c4 + 2] = lut.rgba[o + 2] * 255;
+          } else {
+            colors[c4] = r;
+            colors[c4 + 1] = g;
+            colors[c4 + 2] = b;
+          }
           colors[c4 + 3] = Math.round(HEAD_ALPHA * (1 - k / segPerParticle));
         }
       }

@@ -3,6 +3,7 @@ import { useDebugStatsStore } from '@/features/map/debug/store/debugStatsStore';
 const LABELS: Record<string, string> = {
   freeSurface: '자유수면',
   waterDepth: '수심',
+  current: '해류',
 };
 
 export function DebugStatsOverlay() {

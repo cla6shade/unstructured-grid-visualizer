@@ -240,6 +240,10 @@ export const depthColorMap = createColorMap(OCEAN_STOPS, {
   scale: { type: 'asinh', scale: 10 },
 });
 
+// 해류 유속용. 수심과 같은 색 램프를 방향만 뒤집어(낮음=파랑) 쓰되,
+// 유속은 동적 범위가 작아 linear 매핑으로 둔다.
+export const currentSpeedColorMap = createColorMap([...OCEAN_STOPS].reverse());
+
 // 파고용. 방향은 oceanColorMap과 동일(낮음=파랑, 높음=노랑)하게 스톱을 뒤집되,
 // 작은 파고(0~1m)의 색 해상도를 키우려고 asinh로 매핑한다. scale이 작을수록
 // 저파고 구간에 더 넓은 색 범위가 배분된다.

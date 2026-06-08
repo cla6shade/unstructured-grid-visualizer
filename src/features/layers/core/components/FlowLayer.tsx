@@ -9,10 +9,19 @@ import {
 import { createFlowLayer } from '@/features/vector/lib/createFlowLayer';
 import { useReportInitialLoad } from '@/features/map/loading/hooks/useReportInitialLoad';
 import { useDensityStore } from '@/features/map/density/store/densityStore';
-import type { FlowLayerSpec, LayerId } from '../registry';
+import { CURRENT_SPEED_LUT } from '@/features/layers/current/constants/currentScale';
+import { SELECTABLE_LAYER_SPECS, type FlowLayerSpec, type LayerId } from '../registry';
 
 export function FlowLayer({ spec }: { spec: FlowLayerSpec }) {
-  const visible = useLayerStore((s) => s.layers[spec.id as LayerId]);
+  const layers = useLayerStore((s) => s.layers);
+  const visible = layers[spec.id as LayerId];
+  // current 단독(다른 선택 레이어 전부 off)일 때만 유속→depthColorMap 색을 입힌다.
+  const onlyCurrent =
+    spec.id === 'current' &&
+    SELECTABLE_LAYER_SPECS.every(
+      (s) => layers[s.id as LayerId] === (s.id === spec.id),
+    );
+  const speedColorLut = onlyCurrent ? CURRENT_SPEED_LUT : null;
   const { base, detail, isLoaded } = useVectorSurface(spec.fetcher, visible);
   // 전국(base)·항구(detail) 흐름의 파티클 밀도를 각각 독립적으로 조절한다.
   const nationwideDensity = useDensityStore((s) => s.nationwide);
@@ -41,6 +50,7 @@ export function FlowLayer({ spec }: { spec: FlowLayerSpec }) {
     minAge: 3,
     ageJitter: 3,
     maxDt: 0.05,
+    speedColorLut,
   });
   useFlowLines(detail, visible, onDetailSegments, {
     particleCount: portDensity,
@@ -49,6 +59,7 @@ export function FlowLayer({ spec }: { spec: FlowLayerSpec }) {
     minAge: 1,
     ageJitter: 1.5,
     maxDt: 0.05,
+    speedColorLut,
   });
 
   return null;

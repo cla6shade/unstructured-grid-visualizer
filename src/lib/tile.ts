@@ -95,3 +95,12 @@ export function getTileCoordsInBounds(
   }
   return tiles;
 }
+
+/** 두 타일 목록이 같은 집합인지(좌표·순서 동일) 비교. getTileCoordsInBounds는 결정적 순서라 순서 비교로 충분. */
+export function isSameTileSet(a: TileCoord[], b: TileCoord[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].x !== b[i].x || a[i].y !== b[i].y || a[i].z !== b[i].z) return false;
+  }
+  return true;
+}

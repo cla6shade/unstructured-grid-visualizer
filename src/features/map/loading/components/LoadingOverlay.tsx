@@ -19,8 +19,9 @@ import { SELECTABLE_LAYER_SPECS } from '@/features/layers/core/registry';
  * 로딩/이동 화면.
  * - 항구로 이동 요청(클릭) 시: store.pending이 즉시 세팅되어 "OO(으)로 이동 중..."을
  *   바로 띄운다(실제 카메라 이동은 1초 뒤). 도착·로드가 끝나면 사라진다.
- * - 전국(korea): "데이터 로드 중" 체크리스트(레이어별 진행), "이동 중" 문구 없음.
- * - 항구(이동 완료 후 로딩 중): "OO(으)로 이동 중..." 유지.
+ * - 데이터 로드 체크리스트는 **앱 최초 데이터 로드 시에만** 띄운다. 이후 타임스탬프
+ *   스크럽이나 팬·줌으로는 다시 뜨지 않는다(hasInitialLoaded 게이트).
+ * - 항구로의 클릭 이동 화면("OO(으)로 이동 중...")은 초기 로드 여부와 무관하게 유지한다.
  */
 export function LoadingOverlay() {
   const timestamp = useScenario((s) => s.timestamp);
@@ -31,6 +32,8 @@ export function LoadingOverlay() {
   const loadedForView = useLoadingStatus(
     (s) => s.loaded[loadViewKey(location.urlKey, timestamp)],
   );
+  const hasInitialLoaded = useLoadingStatus((s) => s.hasInitialLoaded);
+  const markInitialLoaded = useLoadingStatus((s) => s.markInitialLoaded);
 
   // 이동 요청 중인 항구가 있으면 즉시 "이동 중"(1초 대기 + 도착 전까지).
   const pendingPort =
@@ -46,14 +49,22 @@ export function LoadingOverlay() {
     Boolean(loadedForView?.[spec.id]),
   );
 
-  if (visibleLayers.length === 0 || allLoaded) return null;
+  if (visibleLayers.length === 0) return null;
+  if (allLoaded) {
+    // 현재 뷰가 전부 로드되면 최초 1회 초기 로드 완료를 마킹한다(멱등).
+    markInitialLoaded();
+    return null;
+  }
 
   // 클릭으로 이동한 항구만: 도착 후 데이터 로딩 중에도 "OO(으)로 이동 중..." 유지.
   if (location.id !== KOREA_LOCATION_ID && byClick) {
     return <MovingOverlay label={location.label} />;
   }
 
-  // 전국 또는 클릭 없이(팬/줌) 들어온 항구: 데이터 로딩 진행을 체크리스트로 표시('이동 중' 문구 없이).
+  // 데이터 로드 체크리스트는 '초기 데이터 로드 시'에만 노출한다.
+  if (hasInitialLoaded) return null;
+
+  // 최초 로드: 데이터 로딩 진행을 체크리스트로 표시('이동 중' 문구 없이).
   const rows: LoadingRow[] = [
     { ...CATALOG_ROW, loaded: true },
     ...visibleLayers.map((spec) => ({
