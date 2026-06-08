@@ -13,5 +13,12 @@ export interface SurfaceMesh {
  * 공통 TileSource(URL/캐시 키)에 노드별 색상 변환(toColors)만 더한다.
  */
 export interface ContourTileFetcher extends TileSource {
-  toColors: (values: ValuesTile['values']) => Float32Array;
+  /**
+   * 노드별 색(RGBA) 버퍼를 만든다. boundaryMask[i]=1인(육지) 노드 중 값이 0인 노드는
+   * alpha 0으로 빼서 렌더링되지 않게 한다.
+   */
+  toColors: (
+    values: ValuesTile['values'],
+    boundaryMask: Uint8Array,
+  ) => Float32Array;
 }

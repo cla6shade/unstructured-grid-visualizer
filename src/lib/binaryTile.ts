@@ -18,6 +18,8 @@ export interface MeshTile {
   node: Int32Array;
   /** 삼각형 연결성. 길이 = triangleCount * 3, 값은 이 타일 내부의 노드 배열 인덱스 */
   conn: Int32Array;
+  /** boundary 노드들의 전역(원본 메쉬) 노드 인덱스. node 배열의 값과 같은 공간. */
+  boundaryNode: Int32Array;
 }
 
 export interface ValuesTile {
@@ -80,8 +82,20 @@ export function decodeMeshTile(buffer: ArrayBuffer): MeshTile {
   const node = viewLE(new Int32Array(buffer, offset, nodeCount));
   offset += nodeCount * 4;
   const conn = viewLE(new Int32Array(buffer, offset, connCount));
+  offset += connCount * 4;
 
-  return { nodeCount, triangleCount: connCount / 3, x, y, node, conn };
+  // conn 뒤에 [len(boundary_node) int32][boundary_node int32 × len]가 이어진다.
+  // 구버전 타일(boundary 섹션 없음) 호환: 남은 바이트가 없으면 빈 배열.
+  let boundaryNode = new Int32Array(0);
+  if (offset + 4 <= buffer.byteLength) {
+    const boundaryCount = view.getInt32(offset, true);
+    offset += 4;
+    if (boundaryCount > 0) {
+      boundaryNode = viewLE(new Int32Array(buffer, offset, boundaryCount));
+    }
+  }
+
+  return { nodeCount, triangleCount: connCount / 3, x, y, node, conn, boundaryNode };
 }
 
 export function decodeValuesTile(

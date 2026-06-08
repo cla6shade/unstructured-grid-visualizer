@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import type { TileCoord } from '@/lib/tile';
 import type { ValuesTile } from '@/lib/binaryTile';
+import { fetchMeshTile } from '@/features/mesh/lib/fetchMeshTile';
 import { fetchValuesTile } from '../lib/fetchValuesTile';
 import type { FetcherCtx, TileSource } from '../types';
 
@@ -20,13 +21,17 @@ export interface ValueBufferTiles {
  * 반환 buffers는 tiles와 인덱스 1:1 — 아직 도착하지 않은 타일은 undefined.
  *
  * @param transform  디코딩된 values를 버퍼로 변환(예: fetcher.toColors / fetcher.toVectors).
+ *                   boundaryMask는 로컬 노드별 boundary(육지) 여부(1/0) — toColors가 쓴다.
  * @param tag        캐시 키 접미사로 색/벡터 캐시를 분리('colors' | 'vectors').
  */
 export function useValueBufferTiles(
   tiles: TileCoord[],
   source: TileSource,
   ctx: FetcherCtx,
-  transform: (values: ValuesTile['values']) => Float32Array,
+  transform: (
+    values: ValuesTile['values'],
+    boundaryMask: Uint8Array,
+  ) => Float32Array,
   tag: string,
 ): ValueBufferTiles {
   const qc = useQueryClient();
@@ -34,6 +39,8 @@ export function useValueBufferTiles(
     queries: tiles.map((coord) => {
       const valuesKey = source.valuesKey(coord, ctx);
       const valuesUrl = source.valuesUrl(coord, ctx);
+      const meshKey = source.meshKey(coord, ctx);
+      const meshUrl = source.meshUrl(coord, ctx);
       return {
         queryKey: [...valuesKey, tag] as const,
         queryFn: async () => {
@@ -43,7 +50,23 @@ export function useValueBufferTiles(
               fetchValuesTile(valuesUrl, source.valueKeys, signal),
             staleTime: Infinity,
           });
-          return values ? transform(values.values) : null;
+          if (!values) return null;
+          // mesh의 boundary_node(육지 노드 전역 인덱스)로 로컬 노드별 마스크를 만든다.
+          // mesh는 geometry라 timestamp 무관 — useDerivedMeshTiles와 같은 키로 캐시 공유.
+          const mesh = await qc.fetchQuery({
+            queryKey: meshKey,
+            queryFn: ({ signal }: { signal: AbortSignal }) =>
+              fetchMeshTile(meshUrl, signal),
+            staleTime: Infinity,
+          });
+          const boundaryMask = new Uint8Array(values.node.length);
+          if (mesh && mesh.boundaryNode.length > 0) {
+            const boundary = new Set(mesh.boundaryNode);
+            for (let i = 0; i < values.node.length; i++) {
+              if (boundary.has(values.node[i])) boundaryMask[i] = 1;
+            }
+          }
+          return transform(values.values, boundaryMask);
         },
         staleTime: Infinity,
       };

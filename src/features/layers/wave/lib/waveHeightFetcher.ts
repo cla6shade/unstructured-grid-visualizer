@@ -1,5 +1,6 @@
 import {
   buildColorLut,
+  maskBoundaryZeroAlpha,
   valuesToRgbaFloat32,
   waveColorMap,
 } from '@/lib/colorMap';
@@ -20,13 +21,13 @@ const LUT = buildColorLut(waveColorMap, WAVE_HEIGHT_MIN, WAVE_HEIGHT_MAX);
  */
 export const waveHeightFetcher: ContourTileFetcher = {
   ...waveSource,
-  // freeSurface와 동일하게 transparentValue=null로 0도 렌더한다.
-  // TODO: 0이 무자료(육지 등)로 들어오면 transparentValue=0으로 바꿔 투명 처리.
-  toColors: (values) => {
+  // transparentValue=null로 값 0도 렌더하되, boundary(육지) 노드의 0만 투명 처리한다.
+  toColors: (values, boundaryMask) => {
     const wh = values['WH'];
     queueMicrotask(() =>
       useDebugStatsStore.getState().report('wave', 'WH', wh),
     );
-    return valuesToRgbaFloat32(wh, LUT, null);
+    const rgba = valuesToRgbaFloat32(wh, LUT, null);
+    return maskBoundaryZeroAlpha(rgba, wh, boundaryMask);
   },
 };

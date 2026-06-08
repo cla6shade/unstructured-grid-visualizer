@@ -1,6 +1,7 @@
 import { LAYER_VALUE_KEYS } from '@/lib/binaryTile';
 import {
   buildColorLut,
+  maskBoundaryZeroAlpha,
   oceanColorMap,
   valuesToRgbaFloat32,
 } from '@/lib/colorMap';
@@ -24,11 +25,12 @@ export const freeSurfaceFetcher: ContourTileFetcher = {
     `/api/subset/${typhoonId}/${location}/${scenarioId}/${LAYER}/${timestamp}/${x}/${y}`,
   valuesKey: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
     [location, scenarioId, LAYER, typhoonId, timestamp, x, y],
-  toColors: (values) => {
+  toColors: (values, boundaryMask) => {
     const s = values['S'];
     queueMicrotask(() =>
       useDebugStatsStore.getState().report('freeSurface', 'S', s),
     );
-    return valuesToRgbaFloat32(s, LUT, null);
+    const rgba = valuesToRgbaFloat32(s, LUT, null);
+    return maskBoundaryZeroAlpha(rgba, s, boundaryMask);
   },
 };

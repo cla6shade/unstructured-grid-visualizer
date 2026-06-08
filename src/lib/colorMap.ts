@@ -213,6 +213,21 @@ export function valuesToRgbaFloat32(
   return out;
 }
 
+/**
+ * boundary(육지) 노드이면서 값이 0 이하인 노드의 alpha를 0으로 만든다(in-place).
+ * `boundaryMask[i]`는 로컬 노드 i가 boundary면 1. values/rgba와 같은 노드 순서를 가정한다.
+ */
+export function maskBoundaryZeroAlpha(
+  rgba: Float32Array,
+  values: Float32Array,
+  boundaryMask: Uint8Array,
+): Float32Array {
+  for (let i = 0; i < values.length; i++) {
+    if (boundaryMask[i] && values[i] <= 0) rgba[i * 4 + 3] = 0;
+  }
+  return rgba;
+}
+
 const OCEAN_STOPS = [
   '#E4E521',
   '#D2E826',
