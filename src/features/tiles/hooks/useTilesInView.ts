@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useViewport } from '@/features/map/viewport/hooks/useViewport';
-import { getTileCoordsInBounds, type TileCoord } from '@/lib/tile';
+import { getTileCoordsInBounds, isSameTileSet, type TileCoord } from '@/lib/tile';
 
 /**
  * 현재 viewport(zoom/bounds) 안에 보이는 z 타일 좌표를 계산한다.
@@ -21,9 +21,17 @@ export function useTilesInView(
 ): TileCoord[] {
   const zoom = useViewport((s) => s.zoom);
   const bounds = useViewport((s) => s.bounds);
+  // 직전 결과를 들고 있다가, 타일 집합이 그대로면 같은 배열 레퍼런스를 반환한다.
+  // 단순 팬/줌으로 보이는 타일이 안 바뀌면 하위 메모(mergeSurface, 속도장 재생성)가
+  // 무효화되지 않아 흐름 애니메이션이 끊기지 않는다.
+  const prevRef = useRef<TileCoord[]>([]);
   return useMemo(() => {
-    if (!enabled) return [];
-    if (zoom < minZoom) return [];
-    return getTileCoordsInBounds(z, bounds, { padding });
+    const next =
+      !enabled || zoom < minZoom
+        ? []
+        : getTileCoordsInBounds(z, bounds, { padding });
+    if (isSameTileSet(prevRef.current, next)) return prevRef.current;
+    prevRef.current = next;
+    return next;
   }, [z, enabled, minZoom, padding, zoom, bounds]);
 }
