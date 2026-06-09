@@ -9,6 +9,8 @@ export default defineConfig({
   // (koos-front 웹 빌드와 동일 규약)
   // Electron 패키징(BUILD_TARGET=electron): file://에서 로드하므로 상대 경로('./')로 내보낸다.
   base: process.env.BUILD_TARGET === 'electron' ? './' : '/koos',
+  // Firefox 102 ESR 등 구버전 호환을 위해 빌드 산출물 target을 명시한다(기본도 firefox78 포함).
+  build: { target: ['es2020', 'firefox102', 'chrome87', 'safari14'] },
   plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
