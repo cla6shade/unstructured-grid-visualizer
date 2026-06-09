@@ -50,7 +50,7 @@ export const LOCATIONS: LocationDef[] = [
     urlKey: 'jinhae',
     lat: 35.1335,
     lng: 128.6811,
-    marker: { lat: 35.1335, lng: 128.5211 },
+    marker: { lat: 35.1535, lng: 128.2211 },
     bounds: { west: 128.320313, south: 34.741612, east: 129.023438, north: 35.317366 },
   },
   {
@@ -59,7 +59,7 @@ export const LOCATIONS: LocationDef[] = [
     urlKey: 'busan',
     lat: 35.1028,
     lng: 129.0403,
-    marker: { lat: 35.1028, lng: 129.2003 },
+    marker: { lat: 35.1028, lng: 129.5003 },
     bounds: { west: 128.847656, south: 34.885931, east: 129.375, north: 35.173808 },
   },
   {
@@ -68,6 +68,7 @@ export const LOCATIONS: LocationDef[] = [
     urlKey: 'donghae',
     lat: 37.5,
     lng: 129.15,
+    marker: { lat: 37.5, lng: 129.55 },
     bounds: { west: 129.023438, south: 37.300275, east: 129.550781, north: 37.71859 },
   },
   {
@@ -76,14 +77,15 @@ export const LOCATIONS: LocationDef[] = [
     urlKey: 'jeju',
     lat: 33.2468,
     lng: 126.417,
+    marker: { lat: 33.0068, lng: 126.617 },
     bounds: { west: 126.210938, south: 32.990236, east: 126.738281, north: 33.28462 },
   },
   {
     id: 'mokpo',
     label: '목포',
     urlKey: 'mokpo',
-    lat: 34.7888,
-    lng: 126.3881,
+    lat: 34.6888,
+    lng: 126.5881,
     bounds: { west: 126.035156, south: 34.597042, east: 126.5625, north: 35.029996 },
   },
 ];
