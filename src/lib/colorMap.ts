@@ -214,16 +214,23 @@ export function valuesToRgbaFloat32(
 }
 
 /**
- * boundary(육지) 노드이면서 값이 0 이하인 노드의 alpha를 0으로 만든다(in-place).
+ * boundary(육지) 노드를 0으로 간주할 때의 허용 오차.
+ * 부동소수점 오차로 0에 아주 가까운 미세 양수값이 육지에 그려지는 것을 막는다.
+ */
+export const BOUNDARY_ZERO_EPSILON = 1e-6;
+
+/**
+ * boundary(육지) 노드이면서 값이 사실상 0 이상(>= -epsilon)인 노드의 alpha를 0으로 만든다(in-place).
  * `boundaryMask[i]`는 로컬 노드 i가 boundary면 1. values/rgba와 같은 노드 순서를 가정한다.
  */
 export function maskBoundaryZeroAlpha(
   rgba: Float32Array,
   values: Float32Array,
   boundaryMask: Uint8Array,
+  epsilon = BOUNDARY_ZERO_EPSILON,
 ): Float32Array {
   for (let i = 0; i < values.length; i++) {
-    if (boundaryMask[i] && values[i] <= 0) rgba[i * 4 + 3] = 0;
+    if (boundaryMask[i] && values[i] >= -epsilon) rgba[i * 4 + 3] = 0;
   }
   return rgba;
 }
