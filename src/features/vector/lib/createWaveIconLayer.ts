@@ -1,5 +1,6 @@
 import { IconLayer } from '@deck.gl/layers';
 import type { Layer } from '@deck.gl/core';
+import { MASK_EXTENSIONS } from '@/features/layers/coastline/lib/maskExtension';
 import type { FlowIcons } from '../hooks/useFlowIcons';
 
 // 파랑 진행 방향 화살표 글리프(기본 위쪽 ↑). mask:true라 getColor로 색·alpha를 입힌다.
@@ -21,6 +22,8 @@ export interface WaveIconLayerProps {
   id: string;
   icons: FlowIcons;
   visible: boolean;
+  maskId?: string;
+  maskInverted?: boolean;
 }
 
 /**
@@ -32,6 +35,8 @@ export function createWaveIconLayer({
   id,
   icons,
   visible,
+  maskId,
+  maskInverted = false,
 }: WaveIconLayerProps): Layer {
   const { positions, angles, colors, count } = icons;
   return new IconLayer({
@@ -50,5 +55,6 @@ export function createWaveIconLayer({
     sizeUnits: 'pixels',
     // mask alpha 그라데이션이 잘리지 않도록 컷오프 해제.
     alphaCutoff: 0,
+    ...(maskId ? { extensions: MASK_EXTENSIONS, maskId, maskInverted } : {}),
   });
 }

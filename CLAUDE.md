@@ -12,11 +12,16 @@ output), decoded client-side and rendered as colored triangle meshes and particl
 ## Commands
 
 ```bash
-pnpm dev        # vite dev server (HMR)
-pnpm build      # tsc -b (typecheck) + vite build
-pnpm lint       # eslint .
-pnpm preview    # serve the production build
+pnpm dev            # vite dev server (HMR)
+pnpm build          # tsc -b (typecheck) + vite build
+pnpm lint           # eslint .
+pnpm preview        # serve the production build
+pnpm electron:dist  # package the Electron app (BUILD_TARGET=electron)
 ```
+
+The app ships as both a web build and an Electron desktop app. `BUILD_TARGET=electron` switches the
+vite base path from `/koos` to `./` (relative); the Electron main process lives in `electron/` and is
+bundled by `scripts/build-electron-main.mjs`. See `docs/electron-build.md`.
 
 There is no test runner configured. `pnpm build` is the typecheck gate — run it to verify changes
 compile (strict TS: `noUnusedLocals`/`noUnusedParameters`/`verbatimModuleSyntax` are on).
@@ -39,10 +44,11 @@ primitives (tile math, binary decode, color maps, network wrappers). Comments ar
 that when editing existing files.
 
 The main features: `map/` (the maplibre shell + its sub-features: `viewport`, `scenario`, `basemap`,
-`deck`, `loading`, `layerSelector`, `debug`); `tiles/` (shared tile-fetch/decode hooks); `contour/`
-and `vector/` (per-field merge + custom deck.gl layers); `mesh/` (mesh-tile fetch); and `layers/`,
-which holds the declarative layer registry (`layers/core/`) plus one folder per renderable field
-(`coastline`, `freeSurface`, `waterDepth`, `current`), each contributing a fetcher and scale constants.
+`deck`, `loading`, `layerSelector`, `density`, `locationSelector`, `debug`); `tiles/` (shared
+tile-fetch/decode hooks); `contour/` and `vector/` (per-field merge + custom deck.gl layers); `mesh/`
+(mesh-tile fetch); and `layers/`, which holds the declarative layer registry (`layers/core/`) plus one
+folder per renderable field (`coastline`, `boundary`, `freeSurface`, `waterDepth`, `current`, `wave`),
+each contributing a fetcher and scale constants.
 
 ### State: two store patterns (both zustand)
 
@@ -50,8 +56,10 @@ which holds the declarative layer registry (`layers/core/`) plus one folder per 
   `scenario`, `basemap`. Created once in a `*Provider`, read via `useViewport(selector)` etc. The
   hook throws if used outside its provider. Use this when state must be scoped to a subtree or seeded
   with props.
-- **Global singleton stores** (`create`): `layerStore` (layer visibility toggles), `debugStatsStore`.
-  Imported directly, no provider.
+- **Global singleton stores** (`create`): `layerStore` (layer visibility toggles, with surge↔wave
+  model mutual-exclusion in `toggle`), `densityStore` (per-region particle counts), `locationStore`
+  (current/pending port), `typhoonSidebarStore` (sidebar open state), `debugStatsStore`. Imported
+  directly, no provider.
 
 All stores use the `devtools` middleware. Provider nesting (see `MapRoot`):
 `ViewportProvider → LoadingStatusProvider → ScenarioProvider → BasemapProvider → <Map>`. The
@@ -72,13 +80,16 @@ To add a low-level deck.gl layer: write a component that returns `null`, compute
 ### The layer registry
 
 Renderable fields are declared **data-first** in `features/layers/core/registry.ts` as
-`MAP_LAYER_SPECS` — one entry per layer with `type` (`coastline` | `contour` | `flow`), `id`,
-`zIndex`, visibility, label, and a `fetcher`. `MapLayers` maps each spec to a thin component
-(`CoastlineLayer` / `ContourLayer` / `FlowLayer`) that runs the surface hook and registers the deck
-group. `LAYER_DEFS` (derived from the selectable specs) drives the `LayerSelector` toggle UI.
+`MAP_LAYER_SPECS` — one entry per layer with `type` (`coastline` | `contour` | `flow` | `wave`), `id`,
+`model` (`surge` | `wave`), `zIndex`, visibility, label, and a `fetcher` (the `wave` spec carries both
+a `contourFetcher` for wave height and a `vectorFetcher` for wave direction). `MapLayers` maps each
+spec to a thin component (`CoastlineLayer` / `ContourLayer` / `FlowLayer` / `WaveLayer`) that runs the
+surface hook and registers the deck group. `LAYER_DEFS` (derived from the selectable specs) drives the
+`LayerSelector` toggle UI, where `model` enforces surge↔wave mutual exclusion.
 
 **To add a new contour/flow field: add a spec entry + write its fetcher.** No new wiring component is
-needed — `ContourLayer`/`FlowLayer` are generic over the fetcher.
+needed — `ContourLayer`/`FlowLayer` are generic over the fetcher. (A new *combined* field like wave
+would need its own `WaveLayer`-style component.)
 
 ### The contour tile pipeline (core data flow)
 
@@ -91,17 +102,31 @@ contour and vector pipelines:
    + `valueKeys`) and adds a render-specific transform: `ContourTileFetcher.toColors` (RGBA) or
    `VectorTileFetcher.toVectors`. See `freeSurfaceFetcher.ts` / `currentFetcher.ts` for templates.
 2. `useContourSurface(fetcher)` (or `useVectorSurface`) reads viewport + scenario and composes the
-   shared hooks:
-   - `useTilesInView(z)` — computes the visible z=6 tiles (contour data is z=6 only).
-   - `useFetcherCtx()` — packages the current `{ typhoonId, scenarioId, timestamp }` for value keys.
+   shared hooks **for two independent resolution slots**:
+   - `useTilesInView(z)` — the **base** slot: visible nationwide tiles at `KOREA_ZOOM` (z=6).
+   - a fixed **detail** manifest (`portDetailTiles()`, z=11) loaded only when the active location is a
+     port. Base and detail do **not** overlap — `mergeSurface` cuts holes in the base where detail
+     covers (triangles whose centroid falls in the port bounds are excluded).
+   - `useFetcherCtx()` — packages the current `{ typhoonId, scenarioId, timestamp, location }`.
    - `useDerivedMeshTiles` — fetches+decodes the mesh tile, derives `{positions, conn, globalNodes}`.
      Cached under `meshKey + 'derived'`, **independent of timestamp/scenario** (geometry is static).
    - `useValueBufferTiles` — fetches the values tile for the current scenario/timestamp and runs the
      transform (`toColors`/`toVectors`) into a typed-array buffer. Cached under `valuesKey + tag`.
 3. `mergeSurface` concatenates the per-tile typed arrays into one `SurfaceMesh`
-   (`positions`/`colors`/`indices`) — concat + index remap only, no per-vertex recompute.
-4. `createContourLayer` wraps it in the custom `ContourSurface` deck.gl layer. `isLoaded` (all tiles
-   for the current viewport+timestamp arrived) is reported to the loading store.
+   (`positions`/`colors`/`indices`) — concat + index remap (+ optional exclusion of triangles in the
+   detail bounds), no per-vertex recompute. The hook returns `{ base, detail, isLoaded, detailLoaded }`.
+4. `createContourLayer` wraps each surface in the custom `ContourSurface` deck.gl layer; the detail
+   group renders only once `boundaryReady && detailLoaded`. `isLoaded` (all tiles for the current
+   viewport+timestamp arrived) is reported to the loading store.
+
+The **vector/flow** pipeline (`useVectorSurface` → `useFlowLines`) is similar but renders particle
+trails: `useFlowLines` runs its own `requestAnimationFrame` loop, samples the `(u,v)` field via
+barycentric interpolation inside mesh triangles, and pushes `FlowSegments` straight into the deck
+registry each frame **without a React re-render**. Particle age/trail state persists across timestamp
+scrubs (only the field is swapped), so the animation stays continuous. Particle counts are split
+nationwide-vs-port via `densityStore`. `WaveLayer` combines a contour channel (WH) and a vector
+channel (THETAW direction icons), each gated on its own detail-ready flag since they can load at
+different timestamps.
 
 Cache strategy (`queryClient.ts`): `staleTime: Infinity`, long `gcTime` — tiles are URL-immutable, so
 this maximizes dedupe/reuse across pans and timestamp changes. `apiFetch` defaults to
@@ -132,11 +157,25 @@ always sampled **uniformly**; the value→position nonlinearity is applied at lo
 for the large shallow-to-deep dynamic range). `normalizeValue` is exported so colorbar tick positions
 (`features/layers/core/colorBar.ts` + `ColorBar`) use the exact same mapping as the rendered mesh.
 
-### Coastline masking
+### Coastline & boundary masking (land is removed at three levels)
 
 `CoastlineLayer` renders the coastline twice: a visible maplibre native `line` layer, and an invisible
 deck.gl mask layer registered under `COASTLINE_MASK_ID`. Other deck.gl layers clip themselves to it via
 `extensions: MASK_EXTENSIONS` + `maskId`/`maskInverted` (e.g. contours render inside the coast).
+
+For port detail (z≥11), land is removed at **three** levels, so check all three when a field bleeds
+onto land: (1) **mesh** — the `boundaryNode` array in the binary tile flags land nodes; (2) **buffer**
+— `maskBoundaryZeroAlpha` sets alpha-0 on land nodes whose value is ≥ 0 (epsilon-tolerant: `>= -1e-6`) during `toColors`; (3) **deck
+mask** — `useBoundaryMask` (`features/layers/boundary/`) fetches the port boundary GeoJSON and registers
+a deck mask layer that the detail surface clips against. The detail group waits for `boundaryReady`
+before rendering to avoid a flash of unmasked land.
+
+### Location / port navigation
+
+`locationStore` (global) holds the active region — nationwide (`korea`) plus a handful of ports, each
+with a precomputed bbox. `useSyncLocationFromViewport` derives the location from the viewport (z≥11 +
+inside a port bbox ⇒ that port), and `pending`/`byClick` drive the "moving to …" overlay during a
+click-initiated fly-to. Location is part of the fetcher ctx, so it re-keys both mesh and value tiles.
 
 ### Scenario model
 
@@ -148,8 +187,10 @@ while store `timestamp` carries the `+09:00` offset.
 
 ### Loading status
 
-The `loading/` feature tracks first-load progress keyed by `[timestamp][layerId]`. Layer hooks call
-`markIsInitialLoaded(layerId, ts)` (via `useReportInitialLoad`) once their tiles for a timestamp have
-arrived; the call is idempotent and deferred with `queueMicrotask` because it fires during render.
-`InitialLoadingScreen` is the catalog-suspense fallback; `LoadingOverlay` shows per-timestamp layer
-progress while scrubbing.
+The `loading/` feature tracks first-load progress keyed by `loadViewKey(location, timestamp)` →
+`layerId`. Layer hooks call `markIsInitialLoaded(layerId, location, ts)` (via `useReportInitialLoad`)
+once their tiles for that location+timestamp have arrived; the call is idempotent and deferred with
+`queueMicrotask` because it fires during render. A separate `hasInitialLoaded` flag (set by
+`markInitialLoaded`) gates the one-time initial UI. `InitialLoadingScreen` is the catalog-suspense
+fallback; `LoadingOverlay` shows per-timestamp layer progress while scrubbing, and the "moving to a
+port" overlay during location changes.

@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useScenario } from '@/features/map/scenario/hooks/useScenario';
+import { useNextTimestep } from '@/features/map/scenario/hooks/useNextTimestep';
+import { usePlaybackStore } from '@/features/map/scenario/store/playbackStore';
 import { formatKstIso, parseKstNaive } from '@/lib/timeUtils';
 import { AmPmPicker } from './AmPmPicker';
 import { DatePicker } from './DatePicker';
@@ -9,7 +11,7 @@ import { TimeDotTrack } from './TimeDotTrack';
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 const HALF_DAY_SLOTS = 12;
-const PLAY_INTERVAL_MS = 1500;
+const PLAY_INTERVAL_MS = 3000;
 
 function startOfDayKst(ms: number) {
   const d = new Date(ms);
@@ -23,7 +25,9 @@ export function ScenarioTimeSelector() {
   const timestamp = useScenario((s) => s.timestamp);
   const setTimestamp = useScenario((s) => s.setTimestamp);
 
-  const [isPlaying, setIsPlaying] = useState(false);
+  const isPlaying = usePlaybackStore((s) => s.isPlaying);
+  const setIsPlaying = usePlaybackStore((s) => s.setIsPlaying);
+  const nextTimestamp = useNextTimestep();
 
   const scenarioTimes = useMemo(
     () =>
@@ -89,18 +93,21 @@ export function ScenarioTimeSelector() {
     commitTime(selectedDate.getTime() + baseHour * HOUR_MS);
   };
 
+  // 재생: nextTimestamp(다음 스텝, 범위 밖이면 null)를 단일 출처로 쓴다.
+  // timestamp가 바뀌면 nextTimestamp가 갱신돼 다음 스텝이 다시 예약되고,
+  // 마지막 스텝(nextTimestamp == null)에 도달하면 자동 정지한다.
   useEffect(() => {
-    if (!isPlaying || !range) return;
-    const id = setInterval(() => {
-      const next = selectedTime.getTime() + HOUR_MS;
-      if (next > range.last) {
-        setIsPlaying(false);
-        return;
-      }
-      setTimestamp(formatKstIso(next));
-    }, PLAY_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [isPlaying, selectedTime, range, setTimestamp]);
+    if (!isPlaying) return;
+    if (nextTimestamp == null) {
+      setIsPlaying(false);
+      return;
+    }
+    const id = setTimeout(
+      () => setTimestamp(nextTimestamp),
+      PLAY_INTERVAL_MS,
+    );
+    return () => clearTimeout(id);
+  }, [isPlaying, nextTimestamp, setTimestamp, setIsPlaying]);
 
   if (!range) return null;
 
@@ -114,7 +121,7 @@ export function ScenarioTimeSelector() {
       <AmPmPicker value={ampmDerived} onChange={handleAmPmChange} />
       <PlayButton
         playing={isPlaying}
-        onToggle={() => setIsPlaying((p) => !p)}
+        onToggle={() => setIsPlaying(!isPlaying)}
       />
       <TimeDotTrack
         slots={slots}

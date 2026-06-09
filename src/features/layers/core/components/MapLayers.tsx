@@ -1,4 +1,5 @@
 import { CoastlineLayer } from '@/features/layers/coastline/components/CoastlineLayer';
+import { LocalMaskLayer } from '@/features/layers/boundary/components/LocalMaskLayer';
 import { ContourLayer } from './ContourLayer';
 import { FlowLayer } from './FlowLayer';
 import { WaveLayer } from './WaveLayer';
@@ -7,6 +8,7 @@ import { MAP_LAYER_SPECS, type LayerSpec } from '../registry';
 export function MapLayers() {
   return (
     <>
+      <LocalMaskLayer />
       {MAP_LAYER_SPECS.map((spec) => (
         <MapLayer key={spec.id} spec={spec} />
       ))}

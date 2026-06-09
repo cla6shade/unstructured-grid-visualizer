@@ -3,6 +3,9 @@ import { useTilesInView } from '@/features/tiles/hooks/useTilesInView';
 import { useFetcherCtx } from '@/features/tiles/hooks/useFetcherCtx';
 import { useDerivedMeshTiles } from '@/features/tiles/hooks/useDerivedMeshTiles';
 import { useValueBufferTiles } from '@/features/tiles/hooks/useValueBufferTiles';
+import { usePrefetchValueBuffers } from '@/features/tiles/hooks/usePrefetchValueBuffers';
+import { usePlaybackStore } from '@/features/map/scenario/store/playbackStore';
+import { useNextTimestep } from '@/features/map/scenario/hooks/useNextTimestep';
 import { useLocationStore } from '@/features/map/locationSelector/store/locationStore';
 import { portDetailTiles } from '@/features/map/locationSelector/constants/portTiles';
 import {
@@ -10,7 +13,6 @@ import {
   KOREA_LOCATION_ID,
   KOREA_ZOOM,
 } from '@/features/map/locationSelector/constants/locations';
-import { tileLngLatBounds, type LngLatRect } from '@/lib/tile';
 import { EMPTY_VECTOR_MESH } from '../lib/emptyVectorMesh';
 import { mergeVectorSurface, type DerivedVectorTile } from '../lib/mergeVectorSurface';
 import type { VectorMesh, VectorTileFetcher } from '../types';
@@ -22,12 +24,14 @@ import type { VectorMesh, VectorTileFetcher } from '../types';
  * contour와 캐시를 공유한다.
  */
 export interface VectorSurfaceResult {
-  /** 전국(z=6) 베이스. 항구면 디테일 영역이 도려내진다. */
+  /** 전국(z=6) 베이스. boundary 마스크로 항구 영역이 도려내진다. */
   base: VectorMesh;
   /** 항구(z=11) 디테일. 전국 뷰에서는 EMPTY_VECTOR_MESH. */
   detail: VectorMesh;
   /** 베이스 + (항구면) 디테일 타일이 모두 도착했는지. */
   isLoaded: boolean;
+  /** 항구이고 z=11 디테일 타일이 모두 도착했는지. base를 boundary로 컷하는 시점 gating에 쓴다. */
+  detailLoaded: boolean;
 }
 
 export function useVectorSurface(
@@ -71,17 +75,6 @@ export function useVectorSurface(
       'vectors',
     );
 
-  const holes = useMemo<LngLatRect[]>(() => {
-    if (!isPort) return [];
-    const rects: LngLatRect[] = [];
-    for (let i = 0; i < detailTiles.length; i++) {
-      if (detailMeshes[i] && detailVectors[i]) {
-        rects.push(tileLngLatBounds(detailTiles[i]));
-      }
-    }
-    return rects;
-  }, [isPort, detailTiles, detailMeshes, detailVectors]);
-
   const base = useMemo(() => {
     const pairs: DerivedVectorTile[] = [];
     for (let i = 0; i < baseTiles.length; i++) {
@@ -91,8 +84,8 @@ export function useVectorSurface(
       pairs.push({ mesh: m, vectors: v });
     }
     if (pairs.length === 0) return EMPTY_VECTOR_MESH;
-    return mergeVectorSurface(pairs, holes);
-  }, [baseTiles, baseMeshes, baseVectors, holes]);
+    return mergeVectorSurface(pairs);
+  }, [baseTiles, baseMeshes, baseVectors]);
 
   const detail = useMemo(() => {
     const pairs: DerivedVectorTile[] = [];
@@ -106,8 +99,30 @@ export function useVectorSurface(
     return mergeVectorSurface(pairs);
   }, [detailTiles, detailMeshes, detailVectors]);
 
-  const detailReady = !isPort || (detailMeshLoaded && detailVectorsLoaded);
+  // 재생 중이면 다음 스텝의 (u,v) 타일을 현재 뷰포트/디테일 타일에 대해 미리 받아 캐시를 워밍한다.
+  const nextTimestamp = useNextTimestep();
+  const isPlaying = usePlaybackStore((s) => s.isPlaying);
+  const prefetchEnabled = enabled && isPlaying && nextTimestamp != null;
+  usePrefetchValueBuffers(
+    baseTiles,
+    fetcher,
+    { ...baseCtx, timestamp: nextTimestamp ?? baseCtx.timestamp },
+    fetcher.toVectors,
+    'vectors',
+    prefetchEnabled,
+  );
+  usePrefetchValueBuffers(
+    detailTiles,
+    fetcher,
+    { ...detailCtx, timestamp: nextTimestamp ?? detailCtx.timestamp },
+    fetcher.toVectors,
+    'vectors',
+    prefetchEnabled,
+  );
+
+  const detailLoaded = isPort && detailMeshLoaded && detailVectorsLoaded;
+  const detailReady = !isPort || detailLoaded;
   const isLoaded = baseMeshLoaded && baseVectorsLoaded && detailReady;
 
-  return { base, detail, isLoaded };
+  return { base, detail, isLoaded, detailLoaded };
 }

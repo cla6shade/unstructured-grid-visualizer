@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import type { TileCoord } from '@/lib/tile';
 import type { ValuesTile } from '@/lib/binaryTile';
-import { fetchValuesTile } from '../lib/fetchValuesTile';
+import { valueBufferQuery } from '../lib/valueBufferQuery';
 import type { FetcherCtx, TileSource } from '../types';
 
 export interface ValueBufferTiles {
@@ -20,34 +20,24 @@ export interface ValueBufferTiles {
  * 반환 buffers는 tiles와 인덱스 1:1 — 아직 도착하지 않은 타일은 undefined.
  *
  * @param transform  디코딩된 values를 버퍼로 변환(예: fetcher.toColors / fetcher.toVectors).
+ *                   boundaryMask는 로컬 노드별 boundary(육지) 여부(1/0) — toColors가 쓴다.
  * @param tag        캐시 키 접미사로 색/벡터 캐시를 분리('colors' | 'vectors').
  */
 export function useValueBufferTiles(
   tiles: TileCoord[],
   source: TileSource,
   ctx: FetcherCtx,
-  transform: (values: ValuesTile['values']) => Float32Array,
+  transform: (
+    values: ValuesTile['values'],
+    boundaryMask: Uint8Array,
+  ) => Float32Array,
   tag: string,
 ): ValueBufferTiles {
   const qc = useQueryClient();
   const results = useQueries({
-    queries: tiles.map((coord) => {
-      const valuesKey = source.valuesKey(coord, ctx);
-      const valuesUrl = source.valuesUrl(coord, ctx);
-      return {
-        queryKey: [...valuesKey, tag] as const,
-        queryFn: async () => {
-          const values = await qc.fetchQuery({
-            queryKey: valuesKey,
-            queryFn: ({ signal }: { signal: AbortSignal }) =>
-              fetchValuesTile(valuesUrl, source.valueKeys, signal),
-            staleTime: Infinity,
-          });
-          return values ? transform(values.values) : null;
-        },
-        staleTime: Infinity,
-      };
-    }),
+    queries: tiles.map((coord) =>
+      valueBufferQuery(qc, coord, source, ctx, transform, tag),
+    ),
   });
 
   const fingerprint = results

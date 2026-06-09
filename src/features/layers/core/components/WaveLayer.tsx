@@ -12,6 +12,8 @@ import {
 import { createWaveIconLayer } from '@/features/vector/lib/createWaveIconLayer';
 import { useReportInitialLoad } from '@/features/map/loading/hooks/useReportInitialLoad';
 import { useDensityStore } from '@/features/map/density/store/densityStore';
+import { useBoundaryMask } from '@/features/layers/boundary/hooks/useBoundaryMask';
+import { localMaskProps } from '@/features/layers/boundary/lib/maskProps';
 import type { WaveLayerSpec, LayerId } from '../registry';
 
 /**
@@ -25,14 +27,32 @@ import type { WaveLayerSpec, LayerId } from '../registry';
  */
 export function WaveLayer({ spec }: { spec: WaveLayerSpec }) {
   const visible = useLayerStore((s) => s.layers[spec.id as LayerId]);
-  const { base: cBase, detail: cDetail, isLoaded: contourLoaded } =
-    useContourSurface(spec.contourFetcher, visible);
-  const { base: vBase, detail: vDetail, isLoaded: vectorLoaded } =
-    useVectorSurface(spec.vectorFetcher, visible);
+  const {
+    base: cBase,
+    detail: cDetail,
+    isLoaded: contourLoaded,
+    detailLoaded: cDetailLoaded,
+  } = useContourSurface(spec.contourFetcher, visible);
+  const {
+    base: vBase,
+    detail: vDetail,
+    isLoaded: vectorLoaded,
+    detailLoaded: vDetailLoaded,
+  } = useVectorSurface(spec.vectorFetcher, visible);
 
   const nationwideDensity = useDensityStore((s) => s.nationwide);
   const portDensity = useDensityStore((s) => s.port);
   useReportInitialLoad(spec.id as LayerId, visible && contourLoaded && vectorLoaded);
+
+  // boundaryReady = 항구 && zoom>=11 && boundary geojson 로드 완료.
+  const boundaryReady = useBoundaryMask().isLoaded;
+  // base는 boundary 바깥(해당 디테일 도착 후 컷), detail은 마스크 준비 시에만 그려 boundary 안쪽 클리핑.
+  // contour와 icon(vector)의 디테일 로드 시점이 달라 base 컷 gating을 각각 따로 둔다.
+  const cBaseActive = boundaryReady && cDetailLoaded;
+  const vBaseActive = boundaryReady && vDetailLoaded;
+  const cBaseMask = useMemo(() => localMaskProps(cBaseActive, true), [cBaseActive]);
+  const vBaseMask = useMemo(() => localMaskProps(vBaseActive, true), [vBaseActive]);
+  const detailMask = useMemo(() => localMaskProps(true, false), []);
 
   const registry = useDeckLayersRegistry();
   const groupId = spec.layerName;
@@ -50,6 +70,7 @@ export function WaveLayer({ spec }: { spec: WaveLayerSpec }) {
           id: `${groupId}-icon-base`,
           icons: baseIconRef.current,
           visible: true,
+          ...vBaseMask,
         }),
       );
     }
@@ -59,6 +80,7 @@ export function WaveLayer({ spec }: { spec: WaveLayerSpec }) {
           id: `${groupId}-icon-detail`,
           icons: detailIconRef.current,
           visible: true,
+          ...detailMask,
         }),
       );
     }
@@ -68,20 +90,33 @@ export function WaveLayer({ spec }: { spec: WaveLayerSpec }) {
       return;
     }
     registry.upsertLayerGroup(groupId, layers, spec.zIndex);
-  }, [registry, groupId, spec.zIndex]);
+  }, [registry, groupId, spec.zIndex, vBaseMask, detailMask]);
 
   // contour base/detail은 timestamp/뷰포트 변경 시에만 바뀐다.
   // detail이 EMPTY면 ContourSurface가 모델을 안 만들어 무해(전국 뷰).
-  const contourLayers = useMemo<DeckLayer[]>(
-    () =>
-      visible
-        ? [
-            createContourLayer({ id: `${groupId}-contour-base`, surface: cBase, visible }),
-            createContourLayer({ id: `${groupId}-contour-detail`, surface: cDetail, visible }),
-          ]
-        : [],
-    [groupId, cBase, cDetail, visible],
-  );
+  // detail contour는 마스크 준비 시에만 그린다(마스크 없이 그리면 base와 겹친다).
+  const contourLayers = useMemo<DeckLayer[]>(() => {
+    if (!visible) return [];
+    const layers: DeckLayer[] = [
+      createContourLayer({
+        id: `${groupId}-contour-base`,
+        surface: cBase,
+        visible,
+        ...cBaseMask,
+      }),
+    ];
+    if (boundaryReady) {
+      layers.push(
+        createContourLayer({
+          id: `${groupId}-contour-detail`,
+          surface: cDetail,
+          visible,
+          ...detailMask,
+        }),
+      );
+    }
+    return layers;
+  }, [groupId, cBase, cDetail, visible, boundaryReady, cBaseMask, detailMask]);
   useEffect(() => {
     contourLayersRef.current = contourLayers;
     pushCombined();
@@ -113,7 +148,7 @@ export function WaveLayer({ spec }: { spec: WaveLayerSpec }) {
     fadeIn: 0.6,
     fadeOut: 1,
   });
-  useFlowIcons(vDetail, visible, onDetailIcons, {
+  useFlowIcons(vDetail, visible && boundaryReady, onDetailIcons, {
     particleCount: portDensity,
     flowSpeed: 0.01,
     minAge: 1,

@@ -10,9 +10,8 @@ const LAYER = 'wave';
  */
 export const waveSource: TileSource = {
   valueKeys: LAYER_VALUE_KEYS.wave.wave,
-  meshUrl: ({ x, y }, { location }) =>
-    `/api/subset/mesh/${location}/${LAYER}/${x}/${y}`,
-  meshKey: ({ x, y }, { location }) => [location, 'mesh', LAYER, x, y],
+  meshUrl: ({ x, y }, { location }) => `/api/subset/mesh/${location}/${x}/${y}`,
+  meshKey: ({ x, y }, { location }) => [location, 'mesh', x, y],
   valuesUrl: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
     `/api/subset/${typhoonId}/${location}/${scenarioId}/${LAYER}/${timestamp}/${x}/${y}`,
   valuesKey: ({ x, y }, { typhoonId, scenarioId, timestamp, location }) =>
