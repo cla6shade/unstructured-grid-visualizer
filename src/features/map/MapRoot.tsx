@@ -25,10 +25,8 @@ import { DensityControl } from '@/features/map/density/components/DensityControl
 import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { LoadingStatusProvider } from '@/features/map/loading/components/LoadingStatusProvider';
-import {
-  InitialLoadingScreen,
-  CATALOG_ROW,
-} from '@/features/map/loading/components/InitialLoadingScreen';
+import { InitialLoadingScreen } from '@/features/map/loading/components/InitialLoadingScreen';
+import { CATALOG_ROW } from '@/features/map/loading/components/loadingRows';
 import { LoadingOverlay } from '@/features/map/loading/components/LoadingOverlay';
 import { MapLayers } from '@/features/layers/core/components/MapLayers';
 import {

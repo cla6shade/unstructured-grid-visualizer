@@ -8,11 +8,11 @@ import {
 import { directionParticle } from '@/features/map/locationSelector/lib/particle';
 import { useLoadingStatus } from '@/features/map/loading/hooks/useLoadingStatus';
 import { loadViewKey } from '@/features/map/loading/types';
+import { InitialLoadingScreen } from '@/features/map/loading/components/InitialLoadingScreen';
 import {
-  InitialLoadingScreen,
   CATALOG_ROW,
   type LoadingRow,
-} from '@/features/map/loading/components/InitialLoadingScreen';
+} from '@/features/map/loading/components/loadingRows';
 import { SELECTABLE_LAYER_SPECS } from '@/features/layers/core/registry';
 
 /**
