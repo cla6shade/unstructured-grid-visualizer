@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Pretendard Variable 폰트를 번들에 포함 (CDN 미사용) */
+@import "pretendard/dist/web/variable/pretendardvariable.css";
 
 @theme {
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system,
