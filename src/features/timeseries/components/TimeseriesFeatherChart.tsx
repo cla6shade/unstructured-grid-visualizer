@@ -4,7 +4,7 @@ import {
   buildFeatherOption,
   maxSpeedOf,
 } from '@/features/timeseries/lib/buildFeatherOption';
-import type { VariableSeries } from '@/features/timeseries/hooks/useTimeseriesSeries';
+import type { VariableSeries } from '@/features/timeseries/hooks/useTimeseriesData';
 
 interface TimeseriesFeatherChartProps {
   label: string;

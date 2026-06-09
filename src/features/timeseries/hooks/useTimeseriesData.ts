@@ -22,7 +22,7 @@ export interface VariableSeries {
  * typhoonId/scenarioId는 모달이 계산한 유효값(로컬 오버라이드 ?? 전역값)을 인자로 받는다 —
  * 전역 scenario store를 직접 읽지 않으므로 모달 안에서만 태풍/시나리오를 바꿀 수 있다.
  */
-export function useTimeseriesSeries(
+export function useTimeseriesData(
   selected: SelectedStation | null,
   typhoonId: string,
   scenarioId: string,

@@ -1,4 +1,4 @@
-import type { VariableSeries } from '@/features/timeseries/hooks/useTimeseriesSeries';
+import type { VariableSeries } from '@/features/timeseries/hooks/useTimeseriesData';
 
 export interface VectorPair {
   /** 그리드 key. `${model}:${base}` */

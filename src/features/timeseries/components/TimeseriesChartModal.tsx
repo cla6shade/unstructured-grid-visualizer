@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { useScenario } from '@/features/map/scenario/hooks/useScenario';
 import { ScenarioIdPicker } from '@/features/map/scenario/components/ScenarioIdPicker';
 import { useTimeseriesCatalog } from '@/features/timeseries/hooks/useTimeseriesCatalog';
-import { useTimeseriesSeries } from '@/features/timeseries/hooks/useTimeseriesSeries';
+import { useTimeseriesData } from '@/features/timeseries/hooks/useTimeseriesData';
 import { useTimeseriesScenario } from '@/features/timeseries/hooks/useTimeseriesScenario';
 import { useTimeseriesSelectionStore } from '@/features/timeseries/store/timeseriesSelectionStore';
 import { TimeseriesVariableChart } from '@/features/timeseries/components/TimeseriesVariableChart';
@@ -30,7 +30,7 @@ export function TimeseriesChartModal() {
   const timestamp = useScenario((s) => s.timestamp);
   const ts = useTimeseriesScenario(selected);
 
-  const series = useTimeseriesSeries(selected, ts.typhoonId, ts.scenarioId);
+  const series = useTimeseriesData(selected, ts.typhoonId, ts.scenarioId);
 
   const currentMs = useMemo(() => {
     const ms = timestamp ? new Date(timestamp).getTime() : NaN;

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { EChart } from '@/features/timeseries/components/EChart';
 import { buildLineOption } from '@/features/timeseries/lib/buildLineOption';
-import type { VariableSeries } from '@/features/timeseries/hooks/useTimeseriesSeries';
+import type { VariableSeries } from '@/features/timeseries/hooks/useTimeseriesData';
 
 interface TimeseriesVariableChartProps {
   series: VariableSeries;
