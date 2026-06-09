@@ -1,11 +1,14 @@
 import { LineLayer } from '@deck.gl/layers';
 import type { Layer } from '@deck.gl/core';
+import { MASK_EXTENSIONS } from '@/features/layers/coastline/lib/maskExtension';
 import type { FlowSegments } from '../hooks/useFlowLines';
 
 export interface FlowLayerProps {
   id: string;
   segments: FlowSegments;
   visible: boolean;
+  maskId?: string;
+  maskInverted?: boolean;
 }
 
 /**
@@ -17,6 +20,8 @@ export function createFlowLayer({
   id,
   segments,
   visible,
+  maskId,
+  maskInverted = false,
 }: FlowLayerProps): Layer {
   const { sources, targets, colors, count } = segments;
   return new LineLayer({
@@ -33,5 +38,6 @@ export function createFlowLayer({
     getWidth: 3,
     widthUnits: 'pixels',
     capRounded: true,
+    ...(maskId ? { extensions: MASK_EXTENSIONS, maskId, maskInverted } : {}),
   });
 }

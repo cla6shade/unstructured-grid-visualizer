@@ -68,8 +68,12 @@ export class ContourSurface extends Layer<InternalContourSurfaceProps> {
 
   updateState(params: UpdateParameters<this>) {
     super.updateState(params);
-    const { props, oldProps } = params;
+    const { props, oldProps, changeFlags } = params;
+    // extensions(MaskExtension) 추가/제거는 셰이더 코드 자체를 바꾸므로 모델을 다시 만들어야
+    // 마스크 GLSL이 (재)주입된다. 이걸 빼먹으면 positions가 바뀌기 전까지 마스크가 안 먹는다
+    // (항구 첫 진입 시 겹침/줌아웃 시 통째 사라짐의 원인).
     if (
+      changeFlags.extensionsChanged ||
       props.positions !== oldProps.positions ||
       props.colors !== oldProps.colors ||
       props.indices !== oldProps.indices

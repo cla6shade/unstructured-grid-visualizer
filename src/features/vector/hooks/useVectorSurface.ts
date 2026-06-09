@@ -10,7 +10,6 @@ import {
   KOREA_LOCATION_ID,
   KOREA_ZOOM,
 } from '@/features/map/locationSelector/constants/locations';
-import { tileLngLatBounds, type LngLatRect } from '@/lib/tile';
 import { EMPTY_VECTOR_MESH } from '../lib/emptyVectorMesh';
 import { mergeVectorSurface, type DerivedVectorTile } from '../lib/mergeVectorSurface';
 import type { VectorMesh, VectorTileFetcher } from '../types';
@@ -22,12 +21,14 @@ import type { VectorMesh, VectorTileFetcher } from '../types';
  * contour와 캐시를 공유한다.
  */
 export interface VectorSurfaceResult {
-  /** 전국(z=6) 베이스. 항구면 디테일 영역이 도려내진다. */
+  /** 전국(z=6) 베이스. boundary 마스크로 항구 영역이 도려내진다. */
   base: VectorMesh;
   /** 항구(z=11) 디테일. 전국 뷰에서는 EMPTY_VECTOR_MESH. */
   detail: VectorMesh;
   /** 베이스 + (항구면) 디테일 타일이 모두 도착했는지. */
   isLoaded: boolean;
+  /** 항구이고 z=11 디테일 타일이 모두 도착했는지. base를 boundary로 컷하는 시점 gating에 쓴다. */
+  detailLoaded: boolean;
 }
 
 export function useVectorSurface(
@@ -71,17 +72,6 @@ export function useVectorSurface(
       'vectors',
     );
 
-  const holes = useMemo<LngLatRect[]>(() => {
-    if (!isPort) return [];
-    const rects: LngLatRect[] = [];
-    for (let i = 0; i < detailTiles.length; i++) {
-      if (detailMeshes[i] && detailVectors[i]) {
-        rects.push(tileLngLatBounds(detailTiles[i]));
-      }
-    }
-    return rects;
-  }, [isPort, detailTiles, detailMeshes, detailVectors]);
-
   const base = useMemo(() => {
     const pairs: DerivedVectorTile[] = [];
     for (let i = 0; i < baseTiles.length; i++) {
@@ -91,8 +81,8 @@ export function useVectorSurface(
       pairs.push({ mesh: m, vectors: v });
     }
     if (pairs.length === 0) return EMPTY_VECTOR_MESH;
-    return mergeVectorSurface(pairs, holes);
-  }, [baseTiles, baseMeshes, baseVectors, holes]);
+    return mergeVectorSurface(pairs);
+  }, [baseTiles, baseMeshes, baseVectors]);
 
   const detail = useMemo(() => {
     const pairs: DerivedVectorTile[] = [];
@@ -106,8 +96,9 @@ export function useVectorSurface(
     return mergeVectorSurface(pairs);
   }, [detailTiles, detailMeshes, detailVectors]);
 
-  const detailReady = !isPort || (detailMeshLoaded && detailVectorsLoaded);
+  const detailLoaded = isPort && detailMeshLoaded && detailVectorsLoaded;
+  const detailReady = !isPort || detailLoaded;
   const isLoaded = baseMeshLoaded && baseVectorsLoaded && detailReady;
 
-  return { base, detail, isLoaded };
+  return { base, detail, isLoaded, detailLoaded };
 }

@@ -10,7 +10,6 @@ import {
   KOREA_LOCATION_ID,
   KOREA_ZOOM,
 } from '@/features/map/locationSelector/constants/locations';
-import { tileLngLatBounds, type LngLatRect } from '@/lib/tile';
 import { EMPTY_SURFACE } from '../lib/emptySurface';
 import { mergeSurface, type DerivedTile } from '../lib/mergeSurface';
 import type { ContourTileFetcher, SurfaceMesh } from '../types';
@@ -25,12 +24,14 @@ import type { ContourTileFetcher, SurfaceMesh } from '../types';
  * 타일별 파생물(mesh positions+conn, colors)은 react-query 캐시에 분리 저장되어 재사용된다.
  */
 export interface ContourSurfaceResult {
-  /** 전국(z=6) 베이스. 항구면 디테일 영역이 도려내진다. */
+  /** 전국(z=6) 베이스. boundary 마스크로 항구 영역이 도려내진다. */
   base: SurfaceMesh;
   /** 항구(z=11) 디테일. 전국 뷰에서는 EMPTY_SURFACE. */
   detail: SurfaceMesh;
   /** 베이스 + (항구면) 디테일 타일이 모두 도착했는지. */
   isLoaded: boolean;
+  /** 항구이고 z=11 디테일 타일이 모두 도착했는지. base를 boundary로 컷하는 시점 gating에 쓴다. */
+  detailLoaded: boolean;
 }
 
 export function useContourSurface(
@@ -68,18 +69,6 @@ export function useContourSurface(
       'colors',
     );
 
-  // 로드된 z=11 디테일 타일의 lng/lat 사각형 = 베이스에서 도려낼 영역.
-  const holes = useMemo<LngLatRect[]>(() => {
-    if (!isPort) return [];
-    const rects: LngLatRect[] = [];
-    for (let i = 0; i < detailTiles.length; i++) {
-      if (detailMeshes[i] && detailColors[i]) {
-        rects.push(tileLngLatBounds(detailTiles[i]));
-      }
-    }
-    return rects;
-  }, [isPort, detailTiles, detailMeshes, detailColors]);
-
   const base = useMemo(() => {
     const pairs: DerivedTile[] = [];
     for (let i = 0; i < baseTiles.length; i++) {
@@ -89,8 +78,8 @@ export function useContourSurface(
       pairs.push({ mesh: m, colors: c });
     }
     if (pairs.length === 0) return EMPTY_SURFACE;
-    return mergeSurface(pairs, holes);
-  }, [baseTiles, baseMeshes, baseColors, holes]);
+    return mergeSurface(pairs);
+  }, [baseTiles, baseMeshes, baseColors]);
 
   const detail = useMemo(() => {
     const pairs: DerivedTile[] = [];
@@ -104,8 +93,9 @@ export function useContourSurface(
     return mergeSurface(pairs);
   }, [detailTiles, detailMeshes, detailColors]);
 
-  const detailReady = !isPort || (detailMeshLoaded && detailColorsLoaded);
+  const detailLoaded = isPort && detailMeshLoaded && detailColorsLoaded;
+  const detailReady = !isPort || detailLoaded;
   const isLoaded = baseMeshLoaded && baseColorsLoaded && detailReady;
 
-  return { base, detail, isLoaded };
+  return { base, detail, isLoaded, detailLoaded };
 }
