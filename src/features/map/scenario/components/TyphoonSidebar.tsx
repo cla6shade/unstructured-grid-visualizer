@@ -40,11 +40,20 @@ export function TyphoonSidebar() {
   };
 
   return (
-    <aside
-      className={`absolute top-0 left-0 h-dvh w-90 z-[1100] bg-map-surface-deep flex flex-col transition-transform duration-300 ${
-        open ? 'translate-x-0' : '-translate-x-full'
-      }`}
-    >
+    <>
+      {/* 사이드바가 열리면 남은(오른쪽) 화면을 map-canvas 60%로 덮는 backdrop. 클릭 시 닫힘. */}
+      <div
+        onClick={close}
+        aria-hidden
+        className={`absolute inset-0 z-[1090] bg-map-canvas/60 transition-opacity duration-300 ${
+          open ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      />
+      <aside
+        className={`absolute top-0 left-0 h-dvh w-90 z-[1100] bg-map-surface-deep flex flex-col transition-transform duration-300 ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
       <div className="flex flex-col gap-4 px-8 pt-8 pb-4">
         <button
           onClick={close}
@@ -101,6 +110,7 @@ export function TyphoonSidebar() {
           </ul>
         )}
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
