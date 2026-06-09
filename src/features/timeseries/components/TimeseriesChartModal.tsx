@@ -1,11 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { useScenario } from '@/features/map/scenario/hooks/useScenario';
+import { ScenarioIdPicker } from '@/features/map/scenario/components/ScenarioIdPicker';
 import { useTimeseriesCatalog } from '@/features/timeseries/hooks/useTimeseriesCatalog';
-import { useTimeseriesSeries } from '@/features/timeseries/hooks/useTimeseriesSeries';
+import { useTimeseriesData } from '@/features/timeseries/hooks/useTimeseriesData';
+import { useTimeseriesScenario } from '@/features/timeseries/hooks/useTimeseriesScenario';
 import { useTimeseriesSelectionStore } from '@/features/timeseries/store/timeseriesSelectionStore';
 import { TimeseriesVariableChart } from '@/features/timeseries/components/TimeseriesVariableChart';
 import { TimeseriesFeatherChart } from '@/features/timeseries/components/TimeseriesFeatherChart';
+import { TyphoonNamePicker } from '@/features/timeseries/components/TyphoonNamePicker';
 import { partitionVectorPairs } from '@/features/timeseries/lib/vectorPairs';
 
 /** model 표시 순서·한글 라벨. */
@@ -25,8 +28,9 @@ export function TimeseriesChartModal() {
   const clear = useTimeseriesSelectionStore((s) => s.clear);
   const catalog = useTimeseriesCatalog();
   const timestamp = useScenario((s) => s.timestamp);
+  const ts = useTimeseriesScenario(selected);
 
-  const series = useTimeseriesSeries(selected);
+  const series = useTimeseriesData(selected, ts.typhoonId, ts.scenarioId);
 
   const currentMs = useMemo(() => {
     const ms = timestamp ? new Date(timestamp).getTime() : NaN;
@@ -68,6 +72,18 @@ export function TimeseriesChartModal() {
               {region?.label ?? selected.regionKey} · 시계열
             </span>
           </div>
+          <div className="ml-auto flex items-center gap-2">
+            <TyphoonNamePicker
+              value={ts.typhoonId}
+              options={ts.typhoonOptions}
+              onChange={ts.selectTyphoon}
+            />
+            <ScenarioIdPicker
+              value={ts.scenarioId}
+              options={ts.scenarioOptions}
+              onChange={ts.selectScenario}
+            />
+          </div>
           <button
             type="button"
             onClick={clear}
@@ -79,7 +95,7 @@ export function TimeseriesChartModal() {
         </div>
 
         {/* 본문: model별 그룹 */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="scrollbar-theme flex-1 overflow-y-auto px-6 py-5">
           {MODEL_ORDER.map((model) => {
             const group = series.filter((s) => s.variable.model === model);
             if (group.length === 0) return null;

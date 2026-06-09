@@ -55,3 +55,25 @@
     background-color: var(--color-map-canvas);
   }
 }
+
+@layer utilities {
+  /* 다크 테마용 얇은 스크롤바. 모달 등 내부 스크롤 영역에 사용. */
+  .scrollbar-theme {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-map-surface-raised) transparent;
+  }
+  .scrollbar-theme::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-theme::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-theme::-webkit-scrollbar-thumb {
+    background: var(--color-map-surface-raised);
+    border-radius: 9999px;
+  }
+  .scrollbar-theme::-webkit-scrollbar-thumb:hover {
+    background: var(--color-map-control-disabled);
+  }
+}

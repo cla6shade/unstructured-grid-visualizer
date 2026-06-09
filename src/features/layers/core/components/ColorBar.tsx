@@ -59,12 +59,20 @@ export function ColorBar({ spec }: { spec: ColorBarSpec }) {
 
     // 양 끝은 항상 라벨을 보이고, 그 사이는 직전에 보인 라벨·끝 라벨과 실제로
     // 안 겹칠 때만 노출한다(측정한 너비 기준).
+    const result: {
+      value: number;
+      t: number;
+      showLabel: boolean;
+      align: string;
+    }[] = [];
     let prevRight = -Infinity;
-    return items.map((it, i) => {
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
       const [l, r] = boxOf(it.t, widths[i], i);
       const isEdge = i === 0 || i === last;
       const showLabel =
-        isEdge || (l >= prevRight + LABEL_GAP_PX && r <= lastBox[0] - LABEL_GAP_PX);
+        isEdge ||
+        (l >= prevRight + LABEL_GAP_PX && r <= lastBox[0] - LABEL_GAP_PX);
       if (showLabel) prevRight = r;
       const align =
         i === 0
@@ -72,8 +80,9 @@ export function ColorBar({ spec }: { spec: ColorBarSpec }) {
           : i === last
             ? '-translate-x-full'
             : '-translate-x-1/2';
-      return { value: it.value, t: it.t, showLabel, align };
-    });
+      result.push({ value: it.value, t: it.t, showLabel, align });
+    }
+    return result;
   }, [ticks, min, max, scale]);
 
   return (
