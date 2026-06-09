@@ -17,6 +17,8 @@ import { LocationSelector } from '@/features/map/locationSelector/components/Loc
 import { LocationPinLayer } from '@/features/map/locationSelector/components/LocationPinLayer';
 import { useFlyToLocation } from '@/features/map/locationSelector/hooks/useFlyToLocation';
 import { useSyncLocationFromViewport } from '@/features/map/locationSelector/hooks/useSyncLocationFromViewport';
+import { TimeseriesStationLayer } from '@/features/timeseries/components/TimeseriesStationLayer';
+import { TimeseriesChartModal } from '@/features/timeseries/components/TimeseriesChartModal';
 import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
 import { ViewportStatsOverlay } from '@/features/map/debug/components/ViewportStatsOverlay';
 import { DensityControl } from '@/features/map/density/components/DensityControl';
@@ -91,6 +93,7 @@ function MapView() {
           <MapLayers />
         </DeckOverlayProvider>
         <LocationPinLayer onSelect={goToLocation} />
+        <TimeseriesStationLayer />
       </Map>
       <BasemapSelector />
       <div className="absolute top-10 left-10 z-[1000] flex flex-col gap-4">
@@ -101,6 +104,7 @@ function MapView() {
       <LayerSelector />
       <ScenarioTimeSelector />
       <LoadingOverlay />
+      <TimeseriesChartModal />
       <div className="absolute bottom-[16px] right-10 z-[1000] flex flex-col items-end gap-2">
         <DebugStatsOverlay />
         <ViewportStatsOverlay />
