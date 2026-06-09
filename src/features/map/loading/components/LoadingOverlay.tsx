@@ -28,6 +28,7 @@ export function LoadingOverlay() {
   const location = useLocationStore((s) => s.location);
   const pending = useLocationStore((s) => s.pending);
   const byClick = useLocationStore((s) => s.byClick);
+  const clearByClick = useLocationStore((s) => s.clearByClick);
   const visibility = useLayerStore((s) => s.layers);
   const loadedForView = useLoadingStatus(
     (s) => s.loaded[loadViewKey(location.urlKey, timestamp)],
@@ -53,6 +54,9 @@ export function LoadingOverlay() {
   if (allLoaded) {
     // 현재 뷰가 전부 로드되면 최초 1회 초기 로드 완료를 마킹한다(멱등).
     markInitialLoaded();
+    // 클릭 이동 도착·로드가 끝났으니 byClick을 내린다. 이후 타임스탬프 스크럽으로
+    // 다시 로딩이 걸려도 "이동 중" 오버레이가 재노출되지 않는다.
+    clearByClick();
     return null;
   }
 

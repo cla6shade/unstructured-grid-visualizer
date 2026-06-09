@@ -22,11 +22,16 @@ interface LocationStore {
   byClick: boolean;
   setLocation: (id: LocationId, byClick: boolean) => void;
   setPending: (id: LocationId | null) => void;
+  /**
+   * 클릭 이동 도착·데이터 로드가 끝나면 byClick을 내려, 이후 타임스탬프 스크럽 같은
+   * 비-이동 갱신에서는 "이동 중" 오버레이가 다시 뜨지 않게 한다.
+   */
+  clearByClick: () => void;
 }
 
 export const useLocationStore = create<LocationStore>()(
   devtools(
-    (set) => ({
+    (set, get) => ({
       location: KOREA_LOCATION,
       pending: null,
       byClick: false,
@@ -37,6 +42,14 @@ export const useLocationStore = create<LocationStore>()(
         set({ location, byClick }, undefined, `setLocation/${id}`);
       },
       setPending: (id) => set({ pending: id }, undefined, `setPending/${id}`),
+      clearByClick: () => {
+        if (!get().byClick) return;
+        // 렌더 단계(LoadingOverlay)에서 호출되므로 set은 microtask로 미룬다.
+        queueMicrotask(() => {
+          if (!get().byClick) return;
+          set({ byClick: false }, undefined, 'clearByClick');
+        });
+      },
     }),
     { name: 'LocationStore' },
   ),
