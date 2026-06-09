@@ -3,6 +3,9 @@ import { useTilesInView } from '@/features/tiles/hooks/useTilesInView';
 import { useFetcherCtx } from '@/features/tiles/hooks/useFetcherCtx';
 import { useDerivedMeshTiles } from '@/features/tiles/hooks/useDerivedMeshTiles';
 import { useValueBufferTiles } from '@/features/tiles/hooks/useValueBufferTiles';
+import { usePrefetchValueBuffers } from '@/features/tiles/hooks/usePrefetchValueBuffers';
+import { usePlaybackStore } from '@/features/map/scenario/store/playbackStore';
+import { useNextTimestep } from '@/features/map/scenario/hooks/useNextTimestep';
 import { useLocationStore } from '@/features/map/locationSelector/store/locationStore';
 import { portDetailTiles } from '@/features/map/locationSelector/constants/portTiles';
 import {
@@ -92,6 +95,28 @@ export function useContourSurface(
     if (pairs.length === 0) return EMPTY_SURFACE;
     return mergeSurface(pairs);
   }, [detailTiles, detailMeshes, detailColors]);
+
+  // 재생 중이면 다음 스텝의 값 타일을 현재 뷰포트/디테일 타일에 대해 미리 받아 캐시를 워밍한다.
+  // mesh는 timestamp 무관(이미 캐시)이므로 값 타일만 프리페치하면 된다.
+  const nextTimestamp = useNextTimestep();
+  const isPlaying = usePlaybackStore((s) => s.isPlaying);
+  const prefetchEnabled = enabled && isPlaying && nextTimestamp != null;
+  usePrefetchValueBuffers(
+    baseTiles,
+    fetcher,
+    { ...baseCtx, timestamp: nextTimestamp ?? baseCtx.timestamp },
+    fetcher.toColors,
+    'colors',
+    prefetchEnabled,
+  );
+  usePrefetchValueBuffers(
+    detailTiles,
+    fetcher,
+    { ...detailCtx, timestamp: nextTimestamp ?? detailCtx.timestamp },
+    fetcher.toColors,
+    'colors',
+    prefetchEnabled,
+  );
 
   const detailLoaded = isPort && detailMeshLoaded && detailColorsLoaded;
   const detailReady = !isPort || detailLoaded;
