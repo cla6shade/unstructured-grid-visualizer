@@ -84,8 +84,12 @@ export const LOCATIONS: LocationDef[] = [
     id: 'mokpo',
     label: '목포',
     urlKey: 'mokpo',
-    lat: 34.6888,
-    lng: 126.5881,
+    // 항구 좌표는 반드시 아래 bounds 안에 있어야 한다(밖이면 detectRegionId가 'korea'로 판정해
+    // pending이 영영 안 풀리고 "이동 중" 로딩이 무한히 걸린다). 기존 값(126.5881/34.6888)은
+    // east 경계(126.5625)를 벗어나 있어 실제 목포항 좌표로 교정.
+    lat: 34.7847,
+    lng: 126.3756,
+    marker: { lat: 34.6888, lng: 126.5881 },
     bounds: { west: 126.035156, south: 34.597042, east: 126.5625, north: 35.029996 },
   },
 ];
