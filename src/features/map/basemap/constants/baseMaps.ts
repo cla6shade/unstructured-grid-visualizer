@@ -2,11 +2,13 @@ import type { StyleSpecification } from 'maplibre-gl';
 import {
   MAP_MIN_ZOOM,
   MAP_MAX_ZOOM,
-  VWORLD_MAX_ZOOM,
+  // 위성 지도(VWORLD)용. 위성 지도 복원 시 함께 주석 해제.
+  // VWORLD_MAX_ZOOM,
 } from '@/features/map/constants/mapConfig';
 import { getTileServerUrl } from '@/lib/network/tileServer';
 
-const VWORLD_API_KEY = import.meta.env.VITE_VWORLD_API_KEY as string;
+// 위성 지도(VWORLD) 복원 시 주석 해제.
+// const VWORLD_API_KEY = import.meta.env.VITE_VWORLD_API_KEY as string;
 
 export interface BaseMapOption {
   id: string;
@@ -44,30 +46,31 @@ export function getBasemaps(): BaseMapOption[] {
         ],
       },
     },
-    {
-      id: 'satellite',
-      label: '위성 지도',
-      style: {
-        version: 8,
-        sources: {
-          vworld: {
-            type: 'raster',
-            tiles: [
-              `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_API_KEY}/Satellite/{z}/{y}/{x}.jpeg`,
-            ],
-            tileSize: 256,
-          },
-        },
-        layers: [
-          {
-            id: 'vworld-layer',
-            type: 'raster',
-            source: 'vworld',
-            minzoom: MAP_MIN_ZOOM,
-            maxzoom: Math.min(MAP_MAX_ZOOM + 1, VWORLD_MAX_ZOOM),
-          },
-        ],
-      },
-    },
+    // 위성 지도(VWORLD). 현재 일반 지도만 사용하므로 비활성화. 복원 시 주석 해제 + 위 VWORLD import/키도 해제.
+    // {
+    //   id: 'satellite',
+    //   label: '위성 지도',
+    //   style: {
+    //     version: 8,
+    //     sources: {
+    //       vworld: {
+    //         type: 'raster',
+    //         tiles: [
+    //           `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_API_KEY}/Satellite/{z}/{y}/{x}.jpeg`,
+    //         ],
+    //         tileSize: 256,
+    //       },
+    //     },
+    //     layers: [
+    //       {
+    //         id: 'vworld-layer',
+    //         type: 'raster',
+    //         source: 'vworld',
+    //         minzoom: MAP_MIN_ZOOM,
+    //         maxzoom: Math.min(MAP_MAX_ZOOM + 1, VWORLD_MAX_ZOOM),
+    //       },
+    //     ],
+    //   },
+    // },
   ];
 }
