@@ -1,65 +1,65 @@
 #!/usr/bin/env bash
-# KOOS standalone 설치 스크립트 (오프라인 el7 대상).
+# 동봉 RPM(Chrome, Vulkan, 의존성) 설치만 한다. 이것만 시스템 레벨(root)이고,
+# KOOS 앱은 이 폴더에서 그대로 실행한다 (설치 후  ./koos-launch.sh).
 #
-#   - 동봉된 vendor/*.rpm (Chrome, Vulkan) 설치
-#   - 앱(dist + 런처)을 /opt/koos 에 배치
-#   - 설정을 /etc/koos/koos.conf 에 설치(기존 설정은 보존)
-#   - /usr/local/bin/koos 실행 래퍼 + 데스크톱 항목 등록
-#
-# 사용법:  sudo ./install.sh
+# 사용:  sudo ./install.sh [--chrome-only]
+#   --chrome-only  Chrome(+폰트 의존성)만 설치하고 vulkan/vulkan-filesystem 은 건너뛴다.
 set -euo pipefail
 
-if [[ "$(id -u)" -ne 0 ]]; then
-  echo "root 권한이 필요합니다:  sudo ./install.sh" >&2
-  exit 1
-fi
+[[ "$(id -u)" -eq 0 ]] || { echo "root 권한이 필요합니다:  sudo ./install.sh" >&2; exit 1; }
 
-SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREFIX="${KOOS_PREFIX:-/opt/koos}"
+CHROME_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --chrome-only) CHROME_ONLY=1 ;;
+    *) echo "알 수 없는 옵션: $arg" >&2; exit 1 ;;
+  esac
+done
 
-echo "==> 동봉 RPM 설치 (Chrome, Vulkan)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 shopt -s nullglob
-RPMS=("$SELF_DIR"/vendor/*.rpm)
-shopt -u nullglob
-if [[ ${#RPMS[@]} -eq 0 ]]; then
-  echo "vendor/*.rpm 이 없습니다. 번들이 손상됐을 수 있습니다." >&2
-  exit 1
+if [[ "$CHROME_ONLY" -eq 1 ]]; then
+  echo "==> Chrome 만 설치 (--chrome-only): vulkan 제외"
+  RPMS=("$HERE"/vendor/google-chrome*.rpm "$HERE"/vendor/liberation-*.rpm)
+else
+  echo "==> 동봉 RPM 설치 (Chrome, Vulkan, 의존성)"
+  RPMS=("$HERE"/vendor/*.rpm)
 fi
-# 참고: Chrome RPM 의 Google 서명 검증은 빌드 시 CI(standalone.yml)에서 수행한다.
-# 이 번들의 RPM 은 CI 가 정품으로 검증한 바이트다.
-# yum 이 있으면 localinstall(이미 설치된 의존성 활용), 없으면 rpm 직접.
+shopt -u nullglob
+[[ ${#RPMS[@]} -gt 0 ]] || { echo "vendor/*.rpm 이 없습니다. 번들이 손상됐을 수 있습니다." >&2; exit 1; }
+
+# Chrome RPM 의 Google 서명은 빌드 CI 에서 검증된다(이 번들의 RPM 은 정품).
 if command -v yum >/dev/null 2>&1; then
   yum localinstall -y "${RPMS[@]}"
 else
   rpm -Uvh --replacepkgs "${RPMS[@]}"
 fi
 
-echo "==> 앱 배치: $PREFIX"
-mkdir -p "$PREFIX"
-rm -rf "$PREFIX/dist"
-cp -a "$SELF_DIR/dist" "$PREFIX/dist"
-cp -a "$SELF_DIR/koos-launch.sh" "$PREFIX/koos-launch.sh"
-chmod +x "$PREFIX/koos-launch.sh"
+# Chrome 자동 업데이트 차단 (버전 125 고정 보호 + 업데이트 알림 방지).
+# chrome RPM 이 깔아두는 yum repo / 재등록 / 업데이트 cron 을 모두 끈다.
+echo "==> Chrome 자동 업데이트 차단"
+[[ -f /etc/yum.repos.d/google-chrome.repo ]] && sed -i 's/^enabled=1/enabled=0/' /etc/yum.repos.d/google-chrome.repo
+mkdir -p /etc/default
+printf 'repo_add_once=false\nrepo_reconfig=false\n' > /etc/default/google-chrome
+rm -f /etc/cron.daily/google-chrome
 
-echo "==> 설정: /etc/koos/koos.conf"
-mkdir -p /etc/koos
-if [[ -f /etc/koos/koos.conf ]]; then
-  cp "$SELF_DIR/config/koos.conf" /etc/koos/koos.conf.default
-  echo "    기존 설정 유지. 새 기본값은 /etc/koos/koos.conf.default 로 저장."
-else
-  cp "$SELF_DIR/config/koos.conf" /etc/koos/koos.conf
-fi
-
-echo "==> 실행 래퍼: /usr/local/bin/koos"
-cat > /usr/local/bin/koos <<EOF
-#!/usr/bin/env bash
-exec env KOOS_HOME="$PREFIX" "$PREFIX/koos-launch.sh" "\$@"
+# 더블클릭 실행용 바로가기를 이 폴더 안에 만든다(절대경로). 시스템 메뉴에 등록하는 게 아님.
+echo "==> 더블클릭 실행용 바로가기: $HERE/KOOS.desktop"
+cat > "$HERE/KOOS.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=KOOS
+Exec=$HERE/koos-launch.sh
+Path=$HERE
+Terminal=false
 EOF
-chmod +x /usr/local/bin/koos
-
-echo "==> 데스크톱 항목: /usr/share/applications/koos.desktop"
-install -Dm644 "$SELF_DIR/koos.desktop" /usr/share/applications/koos.desktop
+chmod +x "$HERE/KOOS.desktop"
+# 소유권을 원래 사용자에게 (sudo 로 실행되므로 root 가 되는 것 방지).
+if [[ -n "${SUDO_UID:-}" ]]; then chown "$SUDO_UID:${SUDO_GID:-$SUDO_UID}" "$HERE/KOOS.desktop"; fi
 
 echo ""
-echo "설치 완료. 'koos' 명령 또는 애플리케이션 메뉴의 KOOS 로 실행하세요."
-echo "Chrome/GPU 플래그 조정: /etc/koos/koos.conf"
+echo "설치 완료."
+echo "  실행: KOOS.desktop 더블클릭  (또는  ./koos-launch.sh)"
+echo "        ※ 처음엔 파일관리자에서 우클릭 → '실행 허용'이 필요할 수 있습니다."
+echo "  플래그/해상도 조정: 이 폴더의 koos.conf 편집 후 다시 실행."

@@ -12,16 +12,20 @@ output), decoded client-side and rendered as colored triangle meshes and particl
 ## Commands
 
 ```bash
-pnpm dev            # vite dev server (HMR)
-pnpm build          # tsc -b (typecheck) + vite build
-pnpm lint           # eslint .
-pnpm preview        # serve the production build
-pnpm electron:dist  # package the Electron app (BUILD_TARGET=electron)
+pnpm dev              # vite dev server (HMR)
+pnpm build            # tsc -b (typecheck) + vite build
+pnpm lint             # eslint .
+pnpm preview          # serve the production build
+pnpm standalone:build # web build with BUILD_TARGET=standalone (relative base, for file:// loading)
+pnpm standalone:fetch # download the vendored Chrome + Vulkan RPMs into vendor/
+pnpm standalone:pack  # assemble the offline standalone bundle (release/*.tar.gz)
+pnpm standalone:test  # local x86 verify of the bundle in a Docker amd64 el7 container
 ```
 
-The app ships as both a web build and an Electron desktop app. `BUILD_TARGET=electron` switches the
-vite base path from `/koos` to `./` (relative); the Electron main process lives in `electron/` and is
-bundled by `scripts/build-electron-main.mjs`. See `docs/electron-build.md`.
+The app ships as a web build (deployed under `/koos`) and an **offline standalone bundle** for el7:
+the web `dist/` packaged with a vendored Google Chrome + Vulkan RPM, launched via
+`chrome --app=file://.../index.html`. `BUILD_TARGET=standalone` switches the vite base path from
+`/koos` to `./` (relative) so it loads over `file://`. See `docs/standalone-build.md`.
 
 There is no test runner configured. `pnpm build` is the typecheck gate — run it to verify changes
 compile (strict TS: `noUnusedLocals`/`noUnusedParameters`/`verbatimModuleSyntax` are on).

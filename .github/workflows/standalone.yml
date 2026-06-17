@@ -46,17 +46,16 @@ jobs:
         id: pkg
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
-      # 웹 빌드 (BUILD_TARGET=electron → 상대경로 base, file:// 로드용)
+      # 웹 빌드 (BUILD_TARGET=standalone → 상대경로 base, file:// 로드용)
       - name: Build web bundle
-        run: pnpm build:standalone
+        run: pnpm standalone:build
 
-      # 동봉할 RPM 을 URL 에서 다운로드 (Chrome, Vulkan). 실패 시 즉시 중단.
+      # 동봉할 RPM 다운로드 (Chrome, Vulkan, Vulkan-filesystem). 로컬과 동일한 fetch 로직 재사용.
       - name: Download bundled RPMs
-        run: |
-          mkdir -p vendor
-          curl -fL --retry 3 -o "vendor/$(basename '${{ github.event.inputs.chrome_rpm_url }}')" '${{ github.event.inputs.chrome_rpm_url }}'
-          curl -fL --retry 3 -o "vendor/$(basename '${{ github.event.inputs.vulkan_rpm_url }}')" '${{ github.event.inputs.vulkan_rpm_url }}'
-          ls -l vendor/
+        run: pnpm standalone:fetch
+        env:
+          CHROME_RPM_URL: ${{ github.event.inputs.chrome_rpm_url }}
+          VULKAN_RPM_URL: ${{ github.event.inputs.vulkan_rpm_url }}
 
       # 받은 Chrome RPM 이 Google 정품 바이트인지 GPG 서명으로 검증한다.
       # 미러(중국 미러 포함) 출처와 무관하게 변조 여부를 차단한다.
@@ -74,7 +73,7 @@ jobs:
 
       # dist + vendor + packaging 템플릿 → release/koos-standalone-<version>-x86_64.tar.gz
       - name: Pack standalone bundle
-        run: pnpm pack:standalone
+        run: pnpm standalone:pack
 
       - name: Upload bundle as workflow artifact
         uses: actions/upload-artifact@v7

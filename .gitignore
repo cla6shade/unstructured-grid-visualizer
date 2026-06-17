@@ -10,12 +10,14 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-dist-electron
 release
 *.local
 
 # standalone 번들에 동봉할 RPM (CI/로컬에서 다운로드, 커밋하지 않음)
 vendor
+
+# 배포 대상 서버 주소가 박힌 로컬 전용 복사 스크립트
+packaging/copy-to-koos.sh
 
 # Environment
 .env
