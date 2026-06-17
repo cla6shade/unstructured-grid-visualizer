@@ -1,9 +1,9 @@
 import { API_KEY_STORAGE_KEY } from '@/constants/auth';
-
-const TILE_SERVER_URL = import.meta.env.VITE_TILE_SERVER_URL as string;
+import { getTileServerUrl } from '@/lib/network/tileServer';
 
 export function transformRequest(url: string, resourceType?: string) {
-  if (resourceType === 'Tile' && url.startsWith(TILE_SERVER_URL)) {
+  const tileServerUrl = getTileServerUrl();
+  if (resourceType === 'Tile' && tileServerUrl && url.startsWith(tileServerUrl)) {
     const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
     return {
       url,

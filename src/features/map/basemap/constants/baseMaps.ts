@@ -4,9 +4,9 @@ import {
   MAP_MAX_ZOOM,
   VWORLD_MAX_ZOOM,
 } from '@/features/map/constants/mapConfig';
+import { getTileServerUrl } from '@/lib/network/tileServer';
 
 const VWORLD_API_KEY = import.meta.env.VITE_VWORLD_API_KEY as string;
-const TILE_SERVER_URL = import.meta.env.VITE_TILE_SERVER_URL as string;
 
 export interface BaseMapOption {
   id: string;
@@ -14,55 +14,60 @@ export interface BaseMapOption {
   style: StyleSpecification;
 }
 
-export const BASEMAPS: BaseMapOption[] = [
-  {
-    id: 'default',
-    label: '일반 지도',
-    style: {
-      version: 8,
-      sources: {
-        'koos-tiles': {
-          type: 'raster',
-          tiles: [`${TILE_SERVER_URL}/api/map/{z}/{x}/{y}`],
-          tileSize: 256,
-          minzoom: MAP_MIN_ZOOM,
-          maxzoom: 12,
+// 타일 서버 주소가 런타임(설정 화면 입력)에 정해지므로, BASEMAPS는 호출 시점에 만든다.
+// (모듈 로드 시점엔 아직 주소가 없을 수 있다.)
+export function getBasemaps(): BaseMapOption[] {
+  const tileServerUrl = getTileServerUrl();
+  return [
+    {
+      id: 'default',
+      label: '일반 지도',
+      style: {
+        version: 8,
+        sources: {
+          'koos-tiles': {
+            type: 'raster',
+            tiles: [`${tileServerUrl}/api/map/{z}/{x}/{y}`],
+            tileSize: 256,
+            minzoom: MAP_MIN_ZOOM,
+            maxzoom: 12,
+          },
         },
+        layers: [
+          {
+            id: 'koos-tiles-layer',
+            type: 'raster',
+            source: 'koos-tiles',
+            minzoom: MAP_MIN_ZOOM,
+            maxzoom: MAP_MAX_ZOOM + 1,
+          },
+        ],
       },
-      layers: [
-        {
-          id: 'koos-tiles-layer',
-          type: 'raster',
-          source: 'koos-tiles',
-          minzoom: MAP_MIN_ZOOM,
-          maxzoom: MAP_MAX_ZOOM + 1,
-        },
-      ],
     },
-  },
-  {
-    id: 'satellite',
-    label: '위성 지도',
-    style: {
-      version: 8,
-      sources: {
-        vworld: {
-          type: 'raster',
-          tiles: [
-            `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_API_KEY}/Satellite/{z}/{y}/{x}.jpeg`,
-          ],
-          tileSize: 256,
+    {
+      id: 'satellite',
+      label: '위성 지도',
+      style: {
+        version: 8,
+        sources: {
+          vworld: {
+            type: 'raster',
+            tiles: [
+              `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_API_KEY}/Satellite/{z}/{y}/{x}.jpeg`,
+            ],
+            tileSize: 256,
+          },
         },
+        layers: [
+          {
+            id: 'vworld-layer',
+            type: 'raster',
+            source: 'vworld',
+            minzoom: MAP_MIN_ZOOM,
+            maxzoom: Math.min(MAP_MAX_ZOOM + 1, VWORLD_MAX_ZOOM),
+          },
+        ],
       },
-      layers: [
-        {
-          id: 'vworld-layer',
-          type: 'raster',
-          source: 'vworld',
-          minzoom: MAP_MIN_ZOOM,
-          maxzoom: Math.min(MAP_MAX_ZOOM + 1, VWORLD_MAX_ZOOM),
-        },
-      ],
     },
-  },
-];
+  ];
+}

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { API_KEY_STORAGE_KEY } from '@/constants/auth'
+import { API_KEY_STORAGE_KEY, TILE_SERVER_STORAGE_KEY } from '@/constants/auth'
 import { ApiKeyPage } from '@/features/auth/components/ApiKeyPage'
 
 interface AuthBoundaryProps {
@@ -8,7 +8,9 @@ interface AuthBoundaryProps {
 
 export function AuthBoundary({ children }: AuthBoundaryProps) {
   const [authed, setAuthed] = useState(
-    () => !!localStorage.getItem(API_KEY_STORAGE_KEY),
+    () =>
+      !!localStorage.getItem(API_KEY_STORAGE_KEY) &&
+      !!localStorage.getItem(TILE_SERVER_STORAGE_KEY),
   )
 
   if (!authed) {

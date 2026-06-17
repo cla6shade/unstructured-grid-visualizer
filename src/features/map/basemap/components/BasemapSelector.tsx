@@ -1,13 +1,15 @@
-import { BASEMAPS } from '@/features/map/basemap/constants/baseMaps';
+import { useMemo } from 'react';
+import { getBasemaps } from '@/features/map/basemap/constants/baseMaps';
 import { useBasemap } from '@/features/map/basemap/hooks/useBasemap';
 
 export function BasemapSelector() {
   const basemapId = useBasemap((s) => s.basemapId);
   const setBasemapId = useBasemap((s) => s.setBasemapId);
+  const basemaps = useMemo(() => getBasemaps(), []);
 
   return (
     <div className="absolute top-10 right-10 z-50 flex flex-col gap-[14px] bg-surface rounded-[12px] pt-3 pb-[10px] px-3 w-29 select-none">
-      {BASEMAPS.map((baseMap) => (
+      {basemaps.map((baseMap) => (
         <button
           key={baseMap.id}
           onClick={() => setBasemapId(baseMap.id)}
