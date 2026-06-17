@@ -1,0 +1,91 @@
+name: Release Standalone (Chrome RPM bundle)
+
+on:
+  workflow_dispatch:
+    inputs:
+      chrome_rpm_url:
+        description: 'Google Chrome RPM URL (x86_64). 출처 무관 — 아래 단계에서 Google 서명으로 검증.'
+        required: true
+        default: 'https://mirrors.aliyun.com/google-chrome/google-chrome/google-chrome-stable-125.0.6422.141-1.x86_64.rpm'
+      vulkan_rpm_url:
+        description: 'Vulkan RPM URL (el7 x86_64)'
+        required: true
+        default: 'http://vault.centos.org/7.9.2009/os/x86_64/Packages/vulkan-1.1.97.0-1.el7.x86_64.rpm'
+
+permissions:
+  contents: write
+
+jobs:
+  build-standalone:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Enable corepack and setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.2 --activate
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Inject .env
+        run: printenv APP_ENV_FILE > .env
+        env:
+          APP_ENV_FILE: ${{ secrets.APP_ENV_FILE }}
+
+      # package.json version을 릴리즈 버전의 단일 소스로 삼는다.
+      - name: Read version from package.json
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # 웹 빌드 (BUILD_TARGET=standalone → 상대경로 base, file:// 로드용)
+      - name: Build web bundle
+        run: pnpm standalone:build
+
+      # 동봉할 RPM 다운로드 (Chrome, Vulkan, Vulkan-filesystem). 로컬과 동일한 fetch 로직 재사용.
+      - name: Download bundled RPMs
+        run: pnpm standalone:fetch
+        env:
+          CHROME_RPM_URL: ${{ github.event.inputs.chrome_rpm_url }}
+          VULKAN_RPM_URL: ${{ github.event.inputs.vulkan_rpm_url }}
+
+      # 받은 Chrome RPM 이 Google 정품 바이트인지 GPG 서명으로 검증한다.
+      # 미러(중국 미러 포함) 출처와 무관하게 변조 여부를 차단한다.
+      - name: Verify Chrome RPM signature (Google key)
+        run: |
+          sudo apt-get update && sudo apt-get install -y rpm
+          curl -fL --retry 3 https://dl.google.com/linux/linux_signing_key.pub -o /tmp/google_linux_signing_key.pub
+          rpm --import /tmp/google_linux_signing_key.pub
+          fail=0
+          for r in vendor/google-chrome*.rpm; do
+            out="$(rpm -K "$r" 2>&1)"; echo "$out"
+            echo "$out" | grep -qi 'signatures OK' || { echo "::error::서명 검증 실패: $r"; fail=1; }
+          done
+          exit $fail
+
+      # dist + vendor + packaging 템플릿 → release/koos-standalone-<version>-x86_64.tar.gz
+      - name: Pack standalone bundle
+        run: pnpm standalone:pack
+
+      - name: Upload bundle as workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: koos-standalone-${{ steps.pkg.outputs.version }}-x86_64
+          path: release/koos-standalone-*-x86_64.tar.gz
+          if-no-files-found: error
+
+      # package.json version 기준 v<version> 릴리즈를 생성/갱신하고 번들을 첨부한다.
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: v${{ steps.pkg.outputs.version }}
+          files: release/koos-standalone-*-x86_64.tar.gz
