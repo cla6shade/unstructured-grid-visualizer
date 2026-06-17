@@ -14,6 +14,9 @@ dist-electron
 release
 *.local
 
+# standalone 번들에 동봉할 RPM (CI/로컬에서 다운로드, 커밋하지 않음)
+vendor
+
 # Environment
 .env
 .env.*

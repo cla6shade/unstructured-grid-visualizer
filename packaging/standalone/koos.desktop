@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=KOOS
+GenericName=Ocean/Storm-surge Visualization
+Comment=KOOS 해양/폭풍해일 시뮬레이션 시각화
+Exec=/usr/local/bin/koos
+Icon=koos
+Terminal=false
+Categories=Science;Education;
+StartupNotify=true
