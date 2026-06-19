@@ -34,9 +34,13 @@ compile (strict TS: `noUnusedLocals`/`noUnusedParameters`/`verbatimModuleSyntax`
 
 ### Environment
 
-`.env` holds `VITE_TILE_SERVER_URL` (data/tile backend) and `VITE_VWORLD_API_KEY` (basemap). The app
-gates on an **API key the user pastes in** (`AuthBoundary`), stored in `localStorage` under
-`x-api-key` and attached to every request via `apiFetch` and maplibre's `transformRequest`.
+The **tile/data server URL and API key are both entered by the user in the setup screen**
+(`AuthBoundary` → `ApiKeyPage`), stored in `localStorage` under `koos-tile-server-url` and `x-api-key`,
+and attached to every request via `apiFetch` and maplibre's `transformRequest`. The server URL is read
+at use time via `getTileServerUrl()` (`src/lib/network/tileServer.ts`), not from a build-time env var —
+so a standalone bundle works against any server without a rebuild. `.env` only holds
+`VITE_VWORLD_API_KEY` (satellite basemap), which is **currently commented out** — only the default
+basemap ships; the VWORLD/satellite path is preserved in comments for later restore.
 
 ## Architecture
 
@@ -48,7 +52,7 @@ primitives (tile math, binary decode, color maps, network wrappers). Comments ar
 that when editing existing files.
 
 The main features: `map/` (the maplibre shell + its sub-features: `viewport`, `scenario`, `basemap`,
-`deck`, `loading`, `layerSelector`, `density`, `locationSelector`, `debug`); `tiles/` (shared
+`deck`, `loading`, `layerSelector`, `density`, `locationSelector`); `tiles/` (shared
 tile-fetch/decode hooks); `contour/` and `vector/` (per-field merge + custom deck.gl layers); `mesh/`
 (mesh-tile fetch); and `layers/`, which holds the declarative layer registry (`layers/core/`) plus one
 folder per renderable field (`coastline`, `boundary`, `freeSurface`, `waterDepth`, `current`, `wave`),
@@ -62,7 +66,7 @@ each contributing a fetcher and scale constants.
   with props.
 - **Global singleton stores** (`create`): `layerStore` (layer visibility toggles, with surge↔wave
   model mutual-exclusion in `toggle`), `densityStore` (per-region particle counts), `locationStore`
-  (current/pending port), `typhoonSidebarStore` (sidebar open state), `debugStatsStore`. Imported
+  (current/pending port), `typhoonSidebarStore` (sidebar open state). Imported
   directly, no provider.
 
 All stores use the `devtools` middleware. Provider nesting (see `MapRoot`):

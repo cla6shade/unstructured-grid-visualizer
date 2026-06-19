@@ -19,8 +19,6 @@ import { useFlyToLocation } from '@/features/map/locationSelector/hooks/useFlyTo
 import { useSyncLocationFromViewport } from '@/features/map/locationSelector/hooks/useSyncLocationFromViewport';
 import { TimeseriesStationLayer } from '@/features/timeseries/components/TimeseriesStationLayer';
 import { TimeseriesChartModal } from '@/features/timeseries/components/TimeseriesChartModal';
-import { DebugStatsOverlay } from '@/features/map/debug/components/DebugStatsOverlay';
-import { ViewportStatsOverlay } from '@/features/map/debug/components/ViewportStatsOverlay';
 import { DensityControl } from '@/features/map/density/components/DensityControl';
 import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
@@ -104,8 +102,6 @@ function MapView() {
       <LoadingOverlay />
       <TimeseriesChartModal />
       <div className="absolute bottom-[16px] right-10 z-[1000] flex flex-col items-end gap-2">
-        <DebugStatsOverlay />
-        <ViewportStatsOverlay />
         <DensityControl />
         <LayerColorBars />
       </div>

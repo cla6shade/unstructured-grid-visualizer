@@ -5,7 +5,6 @@ import {
   oceanColorMap,
   valuesToRgbaFloat32,
 } from '@/lib/colorMap';
-import { useDebugStatsStore } from '@/features/map/debug/store/debugStatsStore';
 import type { ContourTileFetcher } from '@/features/contour/types';
 import {
   FREE_SURFACE_MAX,
@@ -27,9 +26,6 @@ export const freeSurfaceFetcher: ContourTileFetcher = {
     [location, scenarioId, LAYER, typhoonId, timestamp, x, y],
   toColors: (values, boundaryMask) => {
     const s = values['S'];
-    queueMicrotask(() =>
-      useDebugStatsStore.getState().report('freeSurface', 'S', s),
-    );
     const rgba = valuesToRgbaFloat32(s, LUT, null);
     return maskBoundaryZeroAlpha(rgba, s, boundaryMask);
   },

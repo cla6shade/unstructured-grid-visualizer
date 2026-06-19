@@ -4,7 +4,6 @@ import {
   valuesToRgbaFloat32,
   waveColorMap,
 } from '@/lib/colorMap';
-import { useDebugStatsStore } from '@/features/map/debug/store/debugStatsStore';
 import type { ContourTileFetcher } from '@/features/contour/types';
 import {
   WAVE_HEIGHT_MAX,
@@ -24,9 +23,6 @@ export const waveHeightFetcher: ContourTileFetcher = {
   // transparentValue=null로 값 0도 렌더하되, boundary(육지) 노드의 0만 투명 처리한다.
   toColors: (values, boundaryMask) => {
     const wh = values['WH'];
-    queueMicrotask(() =>
-      useDebugStatsStore.getState().report('wave', 'WH', wh),
-    );
     const rgba = valuesToRgbaFloat32(wh, LUT, null);
     return maskBoundaryZeroAlpha(rgba, wh, boundaryMask);
   },

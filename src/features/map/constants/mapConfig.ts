@@ -4,7 +4,8 @@ export const MAP_DEFAULT_ZOOM = 6;
 export const MAP_MIN_ZOOM = 6;
 export const MAP_MAX_ZOOM = 15;
 
-export const VWORLD_MAX_ZOOM = 19;
+// 위성 지도(VWORLD) 복원 시 주석 해제.
+// export const VWORLD_MAX_ZOOM = 19;
 
 export const MAP_BOUNDS: [[number, number], [number, number]] = [
   [117.0, 30.0],

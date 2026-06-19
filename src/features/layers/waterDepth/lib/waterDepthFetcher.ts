@@ -5,7 +5,6 @@ import {
   maskBoundaryZeroAlpha,
   valuesToRgbaFloat32,
 } from '@/lib/colorMap';
-import { useDebugStatsStore } from '@/features/map/debug/store/debugStatsStore';
 import type { ContourTileFetcher } from '@/features/contour/types';
 import {
   DEPTH_LUT_SIZE,
@@ -28,9 +27,6 @@ export const waterDepthFetcher: ContourTileFetcher = {
     [location, scenarioId, LAYER, typhoonId, timestamp, x, y],
   toColors: (values, boundaryMask) => {
     const s = values['H'];
-    queueMicrotask(() =>
-      useDebugStatsStore.getState().report('waterDepth', 'H', s),
-    );
     const rgba = valuesToRgbaFloat32(s, LUT, null);
     return maskBoundaryZeroAlpha(rgba, s, boundaryMask);
   },

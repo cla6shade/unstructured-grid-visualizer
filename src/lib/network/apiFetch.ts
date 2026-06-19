@@ -1,11 +1,11 @@
 import { API_KEY_STORAGE_KEY } from '@/constants/auth';
-
-const BASE_URL = import.meta.env.VITE_TILE_SERVER_URL ?? '';
+import { getTileServerUrl } from '@/lib/network/tileServer';
 
 function buildUrl(url: string): string {
   if (/^https?:\/\//.test(url)) return url;
-  if (!BASE_URL) return url;
-  return BASE_URL.replace(/\/$/, '') + (url.startsWith('/') ? url : `/${url}`);
+  const base = getTileServerUrl();
+  if (!base) return url;
+  return base.replace(/\/$/, '') + (url.startsWith('/') ? url : `/${url}`);
 }
 
 function buildHeaders(extra?: HeadersInit): Headers {
