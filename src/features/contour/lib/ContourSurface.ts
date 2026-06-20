@@ -1,4 +1,4 @@
-import { Layer, project32, picking } from '@deck.gl/core';
+import { Layer, project32 } from '@deck.gl/core';
 import type { DefaultProps, UpdateParameters } from '@deck.gl/core';
 import { Model, Geometry } from '@luma.gl/engine';
 
@@ -59,7 +59,7 @@ export class ContourSurface extends Layer<InternalContourSurfaceProps> {
   declare state: { model?: Model };
 
   getShaders() {
-    return super.getShaders({ vs, fs, modules: [project32, picking] });
+    return super.getShaders({ vs, fs, modules: [project32] });
   }
 
   initializeState() {
