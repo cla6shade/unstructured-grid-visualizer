@@ -2,7 +2,8 @@ import { Suspense, useMemo, useRef } from 'react';
 import { Map, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { BasemapProvider } from '@/features/map/basemap/components/BasemapProvider';
-import { BasemapSelector } from '@/features/map/basemap/components/BasemapSelector';
+// 현재 일반 지도만 사용하므로 지도 선택기 UI는 숨김. 선택지(위성 등) 복원 시 주석 해제.
+// import { BasemapSelector } from '@/features/map/basemap/components/BasemapSelector';
 import { useBasemap } from '@/features/map/basemap/hooks/useBasemap';
 import { transformRequest } from '@/features/auth/lib/transformRequest';
 import { ViewportProvider } from '@/features/map/viewport/components/ViewportProvider';
@@ -92,7 +93,8 @@ function MapView() {
         <LocationPinLayer onSelect={goToLocation} />
         <TimeseriesStationLayer />
       </Map>
-      <BasemapSelector />
+      {/* 지도 선택기 숨김(현재 일반 지도만 사용). 복원 시 위 import와 함께 주석 해제. */}
+      {/* <BasemapSelector /> */}
       <div className="absolute top-10 left-10 z-[1000] flex flex-col gap-4">
         <TyphoonScenarioBar />
         <LocationSelector onSelect={goToLocation} />
