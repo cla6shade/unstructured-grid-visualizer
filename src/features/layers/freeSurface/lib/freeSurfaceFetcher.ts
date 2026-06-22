@@ -5,7 +5,7 @@ import {
   oceanColorMap,
   valuesToRgbaFloat32,
 } from '@/lib/colorMap';
-import type { ContourTileFetcher } from '@/features/contour/types';
+import type { ContourTileFetcher } from '@/features/layers/shared/surface/types';
 import {
   FREE_SURFACE_MAX,
   FREE_SURFACE_MIN,

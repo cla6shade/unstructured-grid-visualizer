@@ -1,5 +1,5 @@
 import { LAYER_VALUE_KEYS } from '@/lib/binaryTile';
-import type { VectorTileFetcher } from '@/features/vector/types';
+import type { VectorTileFetcher } from '@/features/layers/shared/flow/types';
 
 const LAYER = 'current';
 

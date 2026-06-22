@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { BasemapProvider } from '@/features/map/basemap/components/BasemapProvider';
 import { BasemapSelector } from '@/features/map/basemap/components/BasemapSelector';
 import { useBasemap } from '@/features/map/basemap/hooks/useBasemap';
-import { transformRequest } from '@/features/map/lib/transformRequest';
+import { transformRequest } from '@/features/auth/lib/transformRequest';
 import { ViewportProvider } from '@/features/map/viewport/components/ViewportProvider';
 import { useSyncView } from '@/features/map/viewport/hooks/useSyncView';
 import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayProvider';
@@ -20,13 +20,13 @@ import { useSyncLocationFromViewport } from '@/features/map/locationSelector/hoo
 import { TimeseriesStationLayer } from '@/features/timeseries/components/TimeseriesStationLayer';
 import { TimeseriesChartModal } from '@/features/timeseries/components/TimeseriesChartModal';
 import { DensityControl } from '@/features/map/density/components/DensityControl';
-import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
+import { LayerColorBars } from '@/features/layers/shared/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { LoadingStatusProvider } from '@/features/map/loading/components/LoadingStatusProvider';
 import { InitialLoadingScreen } from '@/features/map/loading/components/InitialLoadingScreen';
 import { CATALOG_ROW } from '@/features/map/loading/components/loadingRows';
 import { LoadingOverlay } from '@/features/map/loading/components/LoadingOverlay';
-import { MapLayers } from '@/features/layers/core/components/MapLayers';
+import { MapLayers } from '@/features/layers/shared/components/MapLayers';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,

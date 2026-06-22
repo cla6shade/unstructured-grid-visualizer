@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/network/apiFetch';
+import { apiFetch } from '@/features/auth/lib/apiFetch';
 
 const EMPTY: GeoJSON.FeatureCollection = {
   type: 'FeatureCollection',

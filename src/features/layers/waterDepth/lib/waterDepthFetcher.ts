@@ -5,7 +5,7 @@ import {
   maskBoundaryZeroAlpha,
   valuesToRgbaFloat32,
 } from '@/lib/colorMap';
-import type { ContourTileFetcher } from '@/features/contour/types';
+import type { ContourTileFetcher } from '@/features/layers/shared/surface/types';
 import {
   DEPTH_LUT_SIZE,
   MAX_DEPTH,

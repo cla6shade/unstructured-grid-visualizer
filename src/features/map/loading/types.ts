@@ -1,5 +1,5 @@
 import type { StoreApi } from 'zustand';
-import type { LayerId } from '@/features/layers/core/registry';
+import type { LayerId } from '@/features/layers/shared/registry';
 
 /**
  * (location, timestamp)별 레이어 완료 버킷. 조회는 항상 현재 location+timestamp

@@ -5,7 +5,7 @@ import {
   // 위성 지도(VWORLD)용. 위성 지도 복원 시 함께 주석 해제.
   // VWORLD_MAX_ZOOM,
 } from '@/features/map/constants/mapConfig';
-import { getTileServerUrl } from '@/lib/network/tileServer';
+import { getTileServerUrl } from '@/features/auth/lib/tileServer';
 
 // 위성 지도(VWORLD) 복원 시 주석 해제.
 // const VWORLD_API_KEY = import.meta.env.VITE_VWORLD_API_KEY as string;

@@ -1,5 +1,5 @@
 import { waveColorMap } from '@/lib/colorMap';
-import type { ColorBarSpec } from '@/features/layers/core/colorBar';
+import type { ColorBarSpec } from '@/features/layers/shared/colorBar';
 
 // 파고(WH, m) 색 매핑 범위. fetcher(LUT)와 컬러바가 공유한다.
 // waveColorMap: 낮은 값=파랑(잔잔), 높은 값=노랑(큰 파고) + asinh(저파고 해상도 ↑).

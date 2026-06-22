@@ -1,5 +1,5 @@
 import { depthColorMap } from '@/lib/colorMap';
-import type { ColorBarSpec } from '@/features/layers/core/colorBar';
+import type { ColorBarSpec } from '@/features/layers/shared/colorBar';
 
 // 수심 값 범위. fetcher(LUT)와 컬러바가 공유한다. asinh 매핑 자체는
 // depthColorMap이 들고 있다(@/lib/colorMap).

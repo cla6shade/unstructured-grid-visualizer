@@ -1,5 +1,5 @@
 import { LAYER_VALUE_KEYS } from '@/lib/binaryTile';
-import type { TileSource } from '@/features/tiles/types';
+import type { TileSource } from '@/features/layers/shared/tiles/types';
 
 const LAYER = 'wave';
 
