@@ -1,4 +1,5 @@
-import { apiFetch } from '@/lib/network/apiFetch';
+// 인증(x-api-key/서버 주소 주입)을 소유한 features/auth로의 의도적 역참조(순환 없음).
+import { apiFetch } from '@/features/auth/lib/apiFetch';
 import type { TileCoord } from '@/lib/tile';
 
 export type TileFetcher<R> = (

@@ -1,10 +1,11 @@
 import { Suspense, useMemo, useRef } from 'react';
-import { Map, type MapRef } from 'react-map-gl/maplibre';
+import { Map, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { BasemapProvider } from '@/features/map/basemap/components/BasemapProvider';
-import { BasemapSelector } from '@/features/map/basemap/components/BasemapSelector';
+// 현재 일반 지도만 사용하므로 지도 선택기 UI는 숨김. 선택지(위성 등) 복원 시 주석 해제.
+// import { BasemapSelector } from '@/features/map/basemap/components/BasemapSelector';
 import { useBasemap } from '@/features/map/basemap/hooks/useBasemap';
-import { transformRequest } from '@/features/map/lib/transformRequest';
+import { transformRequest } from '@/features/auth/lib/transformRequest';
 import { ViewportProvider } from '@/features/map/viewport/components/ViewportProvider';
 import { useSyncView } from '@/features/map/viewport/hooks/useSyncView';
 import { DeckOverlayProvider } from '@/features/map/deck/components/DeckOverlayProvider';
@@ -20,13 +21,13 @@ import { useSyncLocationFromViewport } from '@/features/map/locationSelector/hoo
 import { TimeseriesStationLayer } from '@/features/timeseries/components/TimeseriesStationLayer';
 import { TimeseriesChartModal } from '@/features/timeseries/components/TimeseriesChartModal';
 import { DensityControl } from '@/features/map/density/components/DensityControl';
-import { LayerColorBars } from '@/features/layers/core/components/LayerColorBars';
+import { LayerColorBars } from '@/features/layers/shared/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { LoadingStatusProvider } from '@/features/map/loading/components/LoadingStatusProvider';
 import { InitialLoadingScreen } from '@/features/map/loading/components/InitialLoadingScreen';
 import { CATALOG_ROW } from '@/features/map/loading/components/loadingRows';
 import { LoadingOverlay } from '@/features/map/loading/components/LoadingOverlay';
-import { MapLayers } from '@/features/layers/core/components/MapLayers';
+import { MapLayers } from '@/features/layers/shared/components/MapLayers';
 import {
   INITIAL_CENTER,
   INITIAL_VIEWPORT,
@@ -85,13 +86,15 @@ function MapView() {
         onMoveEnd={syncView}
         style={{ width: '100%', height: '100%' }}
       >
+        <AttributionControl compact position="bottom-left" />
         <DeckOverlayProvider>
           <MapLayers />
         </DeckOverlayProvider>
         <LocationPinLayer onSelect={goToLocation} />
         <TimeseriesStationLayer />
       </Map>
-      <BasemapSelector />
+      {/* 지도 선택기 숨김(현재 일반 지도만 사용). 복원 시 위 import와 함께 주석 해제. */}
+      {/* <BasemapSelector /> */}
       <div className="absolute top-10 left-10 z-[1000] flex flex-col gap-4">
         <TyphoonScenarioBar />
         <LocationSelector onSelect={goToLocation} />

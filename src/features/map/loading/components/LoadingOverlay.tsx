@@ -13,7 +13,7 @@ import {
   CATALOG_ROW,
   type LoadingRow,
 } from '@/features/map/loading/components/loadingRows';
-import { SELECTABLE_LAYER_SPECS } from '@/features/layers/core/registry';
+import { SELECTABLE_LAYER_SPECS } from '@/features/layers/shared/registry';
 
 /**
  * 로딩/이동 화면.

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { API_KEY_STORAGE_KEY, TILE_SERVER_STORAGE_KEY } from '@/constants/auth'
+import { API_KEY_STORAGE_KEY, TILE_SERVER_STORAGE_KEY } from '@/features/auth/constants'
 import { ApiKeyPage } from '@/features/auth/components/ApiKeyPage'
 
 interface AuthBoundaryProps {

@@ -1,5 +1,5 @@
 import { buildColorLut, currentSpeedColorMap, type ColorLut } from '@/lib/colorMap';
-import type { ColorBarSpec } from '@/features/layers/core/colorBar';
+import type { ColorBarSpec } from '@/features/layers/shared/colorBar';
 
 // 해류 유속(speed = |(u, v)|, m/s) 범위. 라인 색과 컬러바가 공유한다.
 // 방향만 뒤집은(낮음=파랑) currentSpeedColorMap을 linear로 매핑한다.

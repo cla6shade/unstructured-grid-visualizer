@@ -1,4 +1,4 @@
-import type { VectorTileFetcher } from '@/features/vector/types';
+import type { VectorTileFetcher } from '@/features/layers/shared/flow/types';
 import { waveSource } from './waveSource';
 
 const DEG2RAD = Math.PI / 180;

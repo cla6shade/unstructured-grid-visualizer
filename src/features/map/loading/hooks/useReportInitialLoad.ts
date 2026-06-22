@@ -1,7 +1,7 @@
 import { useScenario } from '@/features/map/scenario/hooks/useScenario';
 import { useLocationStore } from '@/features/map/locationSelector/store/locationStore';
 import { useLoadingStatus } from '@/features/map/loading/hooks/useLoadingStatus';
-import type { LayerId } from '@/features/layers/core/registry';
+import type { LayerId } from '@/features/layers/shared/registry';
 
 /**
  * 레이어가 현재 뷰포트 내용을 모두 로드했을 때(`ready`) 현재 (location, timestamp)

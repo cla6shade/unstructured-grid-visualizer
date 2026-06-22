@@ -1,5 +1,5 @@
 import { oceanColorMap } from '@/lib/colorMap';
-import type { ColorBarSpec } from '@/features/layers/core/colorBar';
+import type { ColorBarSpec } from '@/features/layers/shared/colorBar';
 
 // 자유수면 높이(m) 색 매핑 범위. fetcher와 컬러바가 공유한다.
 // oceanColorMap이 한쪽 끝에 오도록 min>max로 둬서 색 방향을 뒤집는다(선형).

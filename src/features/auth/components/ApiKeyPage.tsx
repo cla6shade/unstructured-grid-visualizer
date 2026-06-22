@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { API_KEY_STORAGE_KEY, TILE_SERVER_STORAGE_KEY } from '@/constants/auth'
+import { API_KEY_STORAGE_KEY, TILE_SERVER_STORAGE_KEY } from '@/features/auth/constants'
 
 interface ApiKeyPageProps {
   onSubmit: () => void

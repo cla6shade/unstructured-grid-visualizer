@@ -4,7 +4,7 @@ import {
   valuesToRgbaFloat32,
   waveColorMap,
 } from '@/lib/colorMap';
-import type { ContourTileFetcher } from '@/features/contour/types';
+import type { ContourTileFetcher } from '@/features/layers/shared/surface/types';
 import {
   WAVE_HEIGHT_MAX,
   WAVE_HEIGHT_MIN,

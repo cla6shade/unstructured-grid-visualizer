@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/network/apiFetch';
+import { apiFetch } from '@/features/auth/lib/apiFetch';
 import type { TimeseriesSeries } from '@/features/timeseries/types';
 
 export interface TimeseriesSeriesParams {
