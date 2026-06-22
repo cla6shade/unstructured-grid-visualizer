@@ -33,6 +33,9 @@ export function getBasemaps(): BaseMapOption[] {
             tileSize: 256,
             minzoom: MAP_MIN_ZOOM,
             maxzoom: 12,
+            // OSM 기반 타일이라 저작자 표시 필수.
+            attribution:
+              '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
           },
         },
         layers: [

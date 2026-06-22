@@ -77,3 +77,9 @@
     background: var(--color-map-control-disabled);
   }
 }
+
+/* OSM attribution: 글자(저작자 표시)는 또렷하게 두고 배경만 투명하게 낮춘다. */
+.maplibregl-ctrl-attrib.maplibregl-compact,
+.maplibregl-ctrl-attrib.maplibregl-compact.maplibregl-compact-show {
+  background: rgba(255, 255, 255, 0.3);
+}

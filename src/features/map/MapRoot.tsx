@@ -1,5 +1,5 @@
 import { Suspense, useMemo, useRef } from 'react';
-import { Map, type MapRef } from 'react-map-gl/maplibre';
+import { Map, AttributionControl, type MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { BasemapProvider } from '@/features/map/basemap/components/BasemapProvider';
 import { BasemapSelector } from '@/features/map/basemap/components/BasemapSelector';
@@ -85,6 +85,7 @@ function MapView() {
         onMoveEnd={syncView}
         style={{ width: '100%', height: '100%' }}
       >
+        <AttributionControl compact position="bottom-left" />
         <DeckOverlayProvider>
           <MapLayers />
         </DeckOverlayProvider>
