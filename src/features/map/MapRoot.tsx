@@ -21,6 +21,7 @@ import { useSyncLocationFromViewport } from '@/features/map/locationSelector/hoo
 import { TimeseriesStationLayer } from '@/features/timeseries/components/TimeseriesStationLayer';
 import { TimeseriesChartModal } from '@/features/timeseries/components/TimeseriesChartModal';
 import { DensityControl } from '@/features/map/density/components/DensityControl';
+import { SubsetRunButton } from '@/features/map/subset/components/SubsetRunButton';
 import { LayerColorBars } from '@/features/layers/shared/components/LayerColorBars';
 import { fetchCatalog } from '@/features/map/scenario/lib/fetchCatalog';
 import { LoadingStatusProvider } from '@/features/map/loading/components/LoadingStatusProvider';
@@ -100,6 +101,9 @@ function MapView() {
         <LocationSelector onSelect={goToLocation} />
       </div>
       <TyphoonSidebar />
+      <div className="absolute top-10 right-10 z-[1000]">
+        <SubsetRunButton />
+      </div>
       <LayerSelector />
       <ScenarioTimeSelector />
       <LoadingOverlay />
