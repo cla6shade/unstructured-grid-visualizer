@@ -2,6 +2,13 @@ import { Layer, project32 } from '@deck.gl/core';
 import type { DefaultProps, UpdateParameters } from '@deck.gl/core';
 import { Model, Geometry } from '@luma.gl/engine';
 
+// NOTE: DECKGL_FILTER_GL_POSITION / DECKGL_FILTER_COLOR 훅은 일부러 호출하지 않는다.
+// struct(FragmentGeometry)를 인자로 넘기는 이 호출을 Adreno의 ANGLE 컴파일러가
+// `type.getPrecision() != EvpqUndefined` assertion으로 거부해 셰이더 컴파일이 실패,
+// contour가 통째로 안 그려진다(다른 GPU/데스크탑은 관대하게 통과). MaskExtension은
+// 이 훅이 아니라 luma의 #main-start/#main-end 주입으로 동작하므로(mask/shader-module.js)
+// 호출을 빼도 마스크 클리핑은 그대로 유지된다. geometry.worldPosition/geometry.position
+// 세팅은 그 #main-end 주입이 참조하므로 남겨둔다. picking은 이 레이어에서 미사용.
 const vs = `\
 #version 300 es
 #define SHADER_NAME contour-surface-vs
@@ -14,8 +21,6 @@ void main(void) {
   geometry.worldPosition = positions;
   gl_Position = project_position_to_clipspace(positions, vec3(0.0), vec3(0.0), geometry.position);
   vColor = vertexColors;
-  DECKGL_FILTER_GL_POSITION(gl_Position, geometry);
-  DECKGL_FILTER_COLOR(vColor, geometry);
 }
 `;
 
@@ -30,7 +35,6 @@ out vec4 fragColor;
 
 void main(void) {
   fragColor = vColor;
-  DECKGL_FILTER_COLOR(fragColor, geometry);
 }
 `;
 
